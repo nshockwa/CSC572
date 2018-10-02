@@ -4,8 +4,10 @@ out vec4 color;
 
 in vec2 fragTex;
 
+uniform int direction;
 
 layout(location = 0) uniform sampler2D tex;
+layout(location = 1) uniform sampler2D tex2;
 
 void main()
 {
@@ -17,7 +19,13 @@ void main()
 	texturecolor.b = pow(texturecolor.b, 5);
 	for (int i = -10; i < 10; i++)
 	{
-		vec3 col = texture(tex, fragTex + vec2(i*xp, 0), 0).rgb;
+		vec3 col;
+		if (direction == 0){
+		col = texture(tex, fragTex + vec2(i*xp, 0), 0).rgb;
+		}
+		if (direction ==1){
+		col = texture(tex, fragTex + vec2(0, i*xp), 0).rgb;
+		}
 		if (i == 0) continue;
 		int wi = abs(i);
 		texturecolor += col * weights[wi - 1];
