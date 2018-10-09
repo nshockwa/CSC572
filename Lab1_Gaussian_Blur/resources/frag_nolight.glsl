@@ -15,7 +15,7 @@ void main()
 	texturecolor.r = pow(texturecolor.r, 5);
 	texturecolor.g = pow(texturecolor.g, 5);
 	texturecolor.b = pow(texturecolor.b, 5);
-	for (int i = -10; i < 10; i++)
+	for (int i = -4; i < 4; i++)
 	{
 		vec3 col = texture(tex, fragTex + vec2(i*xp, 0), 0).rgb;
 		if (i == 0) continue;
