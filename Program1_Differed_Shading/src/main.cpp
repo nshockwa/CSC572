@@ -49,6 +49,9 @@ public:
 	GLuint TextureMoon,FBOtex,fb,depth_rb, FBOpos, FBOnor;
 
 	GLuint VertexArrayIDBox, VertexBufferIDBox, VertexBufferTex;
+	int frameCount;
+	double frameRate;
+	double frameTime;
 	
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
@@ -166,6 +169,7 @@ public:
 		prog2->addUniform("P");
 		prog2->addUniform("V");
 		prog2->addUniform("M");
+		prog2->addUniform("campos");
 		prog2->addAttribute("vertPos");
 		prog2->addAttribute("vertTex");
 
@@ -268,12 +272,10 @@ public:
 		//set the 2 textures to the correct samplers in the fragment shader:
 		GLuint Tex1Location = glGetUniformLocation(prog->pid, "tex");//tex, tex2... sampler in the fragment shader
 		GLuint Tex2Location = glGetUniformLocation(prog->pid, "tex2");
-		GLuint Tex3Location = glGetUniformLocation(prog->pid, "tex3");
 		// Then bind the uniform samplers to texture units:
 		glUseProgram(prog->pid);
 		glUniform1i(Tex1Location, 0);
 		glUniform1i(Tex2Location, 1);
-		glUniform1i(Tex3Location, 2);
 
 
 		glUseProgram(prog2->pid);
@@ -313,7 +315,7 @@ public:
 		//Attach 2D texture to this FBO
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, FBOtex, 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, FBOpos, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, FBOnor, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, FBOnor, 0);
 		//-------------------------
 		glGenRenderbuffers(1, &depth_rb);
 		glBindRenderbuffer(GL_RENDERBUFFER, depth_rb);
@@ -327,8 +329,10 @@ public:
 		
 		int Tex1Loc = glGetUniformLocation(prog2->pid, "tex");//tex, tex2... sampler in the fragment shader
 		int Tex2Loc = glGetUniformLocation(prog2->pid, "tex2");
+		int Tex3Loc = glGetUniformLocation(prog2->pid, "tex3");
 		glUniform1i(Tex1Loc, 0);
 		glUniform1i(Tex2Loc, 1);
+		glUniform1i(Tex3Loc, 2);
 
 		GLenum status;
 		status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -341,6 +345,7 @@ public:
 			cout << "status framebuffer: bad!!!!!!!!!!!!!!!!!!!!!!!!!";
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		mycam.pos = vec3(-4, -4, -20);
 	}
 	//*************************************
 	double get_last_elapsed_time()
@@ -378,10 +383,14 @@ public:
 		glBindTexture(GL_TEXTURE_2D, FBOtex);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, FBOpos);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, FBOnor);
 		M = glm::scale(glm::mat4(1),glm::vec3(1.2,1,1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
 		glUniformMatrix4fv(prog2->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
 		glUniformMatrix4fv(prog2->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 		glUniformMatrix4fv(prog2->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glUniform3fv(prog2->getUniform("campos"), 1, &mycam.pos.x);
+
 		glBindVertexArray(VertexArrayIDBox);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -393,7 +402,7 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, fb);
 		GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
 		glDrawBuffers(3, buffers);
-		double frametime = get_last_elapsed_time();
+		//double frametime = get_last_elapsed_time();
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		// Get current frame buffer size.
@@ -418,12 +427,12 @@ public:
 
 		//	******		earth		******
 		static float angle = 0;
-		angle += 0.02*frametime;
+		angle += 0.02;//frametime;
 		M = glm::translate(glm::mat4(1.f), glm::vec3(0, 0, -5));
-		glm::mat4 Ry = glm::rotate(glm::mat4(1.f), angle, glm::vec3(0, 1, 0));
+		//glm::mat4 Ry = glm::rotate(glm::mat4(1.f), angle, glm::vec3(0, 1, 0));
 		float pih = -3.1415926 / 2.0;
 		glm::mat4 Rx = glm::rotate(glm::mat4(1.f), pih, glm::vec3(1, 0, 0));
-		M = M * Ry * Rx;
+		M = M * Rx;
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, TextureEarth);
 
@@ -443,27 +452,27 @@ public:
 		
 		
 							
-		//	******		moon		******
-		static float moonangle = 0.3;
-		moonangle += 0.005*frametime;
-		M = glm::translate(glm::mat4(1.f), glm::vec3(-2.5, 0, 2.5));
-		glm::mat4 Ryrad = glm::rotate(glm::mat4(1.f), moonangle, glm::vec3(0, 1, 0));
-		T = glm::translate(glm::mat4(1.f), glm::vec3(0, 0, -5));
-		S = glm::scale(glm::mat4(1.f), glm::vec3(0.1, 0.1, 0.1));
-		mat4 MM = T * Ryrad * M * Rx * S;
-		
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, TextureMoon);
-		
-		float ww = (2.*3.1415926) / 8.;
-		for (int ii = 0; ii < 8; ii++)
-			{
-			float angl = moonangle + ww*(float)ii;
-			Ryrad = glm::rotate(glm::mat4(1.f), angl, glm::vec3(0, 1, 0));
-			MM = T * Ryrad * M * Rx * S;
-			glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &MM[0][0]);
-			shape->draw(prog,true);	//draw moon
-			}
+		////	******		moon		******
+		//static float moonangle = 0.3;
+		//moonangle += 0.005;//*frametime;
+		//M = glm::translate(glm::mat4(1.f), glm::vec3(-2.5, 0, 2.5));
+		//glm::mat4 Ryrad = glm::rotate(glm::mat4(1.f), moonangle, glm::vec3(0, 1, 0));
+		//T = glm::translate(glm::mat4(1.f), glm::vec3(0, 0, -5));
+		//S = glm::scale(glm::mat4(1.f), glm::vec3(0.1, 0.1, 0.1));
+		//mat4 MM = T * Ryrad * M * Rx * S;
+		//
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D, TextureMoon);
+		//
+		//float ww = (2.*3.1415926) / 8.;
+		//for (int ii = 0; ii < 8; ii++)
+		//	{
+		//	float angl = moonangle + ww*(float)ii;
+		//	Ryrad = glm::rotate(glm::mat4(1.f), angl, glm::vec3(0, 1, 0));
+		//	MM = T * Ryrad * M * Rx * S;
+		//	glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &MM[0][0]);
+		//	shape->draw(prog,true);	//draw moon
+		//	}
 		//done, unbind stuff
 		prog->unbind();
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -473,6 +482,16 @@ public:
 		glGenerateMipmap(GL_TEXTURE_2D); 
 		glBindTexture(GL_TEXTURE_2D, FBOnor);
 		glGenerateMipmap(GL_TEXTURE_2D);
+		frameTime += get_last_elapsed_time();
+		frameCount++;
+
+		if (frameCount == 100) {
+			frameRate = frameCount / frameTime;
+			frameCount = 0;
+			frameTime = 0;
+			printf("\n%f", frameRate);
+		}
+
 	}
 };
 //*********************************************************************************************************
@@ -492,7 +511,7 @@ int main(int argc, char **argv)
 	// and GL context, etc.
 
 	WindowManager *windowManager = new WindowManager();
-	windowManager->init(640, 480);
+	windowManager->init(1920, 1080);
 	windowManager->setEventCallbacks(application);
 	application->windowManager = windowManager;
 
