@@ -396,7 +396,7 @@ public:
 		// Draw the box using GLSL.
 		prog->bind();
 
-		V = mycam.process(frametime);
+		//V = mycam.process(frametime);
 		//send the matrices to the shaders
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
 		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
@@ -442,39 +442,85 @@ void renderfct(int w, int h, glm::mat4 VRheadmatrix)
 //******************************************************************************************
 int main(int argc, char **argv)
 {
+	//std::string resourceDir = "../resources"; // Where the resources are loaded from
+	//if (argc >= 2)
+	//{
+	//	resourceDir = argv[1];
+	//}
+
+	//Application *application = new Application();
+
+	///* your main will always include a similar set up to establish your window
+	//	and GL context, etc. */
+	//WindowManager * windowManager = new WindowManager();
+	//vrapp = new OpenVRApplication();
+
+	//windowManager->init(1920, 1080);
+	//windowManager->setEventCallbacks(application);
+	//application->windowManager = windowManager;
+
+
+	//windowManager->init(vrapp->get_render_width(), vrapp->get_render_height());
+	///* This is the code that will likely change program to program as you
+	//	may need to initialize or set up different data and state */
+	//// Initialize scene.
+	//application->init(resourceDir);
+	//application->initGeom();
+	//vrapp->init_buffers(resourceDir);
+
+
+	//// Loop until the user closes the window.
+	//while(! glfwWindowShouldClose(windowManager->getHandle()))
+	//{
+
+	//	// Render scene.
+	//	vrapp->render_to_VR(renderfct);
+	//	vrapp->render_to_screen(1);
+	//	// Swap front and back buffers.
+	//	glfwSwapBuffers(windowManager->getHandle());
+	//	// Poll for and process events.
+	//	glfwPollEvents();
+	//}
+
+	//// Quit program.
+	//windowManager->shutdown();
+	//return 0;
 	std::string resourceDir = "../resources"; // Where the resources are loaded from
 	if (argc >= 2)
 	{
 		resourceDir = argv[1];
 	}
-
-	Application *application = new Application();
+	srand(time(0));
+	application = new Application();
 
 	/* your main will always include a similar set up to establish your window
-		and GL context, etc. */
+	and GL context, etc. */
 	WindowManager * windowManager = new WindowManager();
-	windowManager->init(1920, 1080);
-	windowManager->setEventCallbacks(application);
-	application->windowManager = windowManager;
+
 
 	vrapp = new OpenVRApplication();
 
 	windowManager->init(vrapp->get_render_width(), vrapp->get_render_height());
+
+	windowManager->setEventCallbacks(application);
+	application->windowManager = windowManager;
+
 	/* This is the code that will likely change program to program as you
-		may need to initialize or set up different data and state */
+	may need to initialize or set up different data and state */
 	// Initialize scene.
 	application->init(resourceDir);
 	application->initGeom();
 	vrapp->init_buffers(resourceDir);
 
 
-	// Loop until the user closes the window.
-	while(! glfwWindowShouldClose(windowManager->getHandle()))
-	{
 
-		// Render scene.
+	// Loop until the user closes the window.
+
+	while (!glfwWindowShouldClose(windowManager->getHandle()))
+	{
 		vrapp->render_to_VR(renderfct);
 		vrapp->render_to_screen(1);
+
 		// Swap front and back buffers.
 		glfwSwapBuffers(windowManager->getHandle());
 		// Poll for and process events.
