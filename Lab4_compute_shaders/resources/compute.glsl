@@ -12,13 +12,41 @@ layout(local_size_x = 1, local_size_y = 1) in;
 //local group of shaders
 layout (std430, binding=0) volatile buffer shader_data
 { 
-  vec4 dataA[1024];
-  vec4 dataB[1024];
+  ivec4 dataA[4096];
+  ivec4 dataB[4096];
 };
 
+layout(location=0) uniform int odd;
+layout(location=1) uniform int size;
+
+
+bool isOdd(uint x) {
+   return (mod(x, 2) == 1.0);
+}
+
+void swapMin(uint index) {
+  if(index < size -1){
+   int mini = min(dataA[index].x, dataA[index+1].x);
+   int temp = max(dataA[index].x, dataA[index+1].x);
+   dataA[index].x = mini;
+   dataA[index+1].x = temp;
+   }
+}
+
 void main() 
-	{
+{
 	uint index = gl_GlobalInvocationID.x;	
-	vec3 data = dataA[index].xyz;
-	dataB[index].x = data.x*3;		
+
+	if (odd == 0){
+	 	if(isOdd(index))
+		{
+			swapMin(index);
+		}
 	}
+	else{ //odd == 1
+		if(!isOdd(index))
+		{
+			swapMin(index);
+		}
+	}
+}

@@ -19,7 +19,7 @@ using namespace std;
 using namespace glm;
 shared_ptr<Shape> shape;
 
-#define STARCOUNT 1024
+#define STARCOUNT 1899
 class ssbo_data
 	{
 	public:
@@ -84,7 +84,7 @@ public:
 		//make an SSBO
 		for (int ii = 0; ii < STARCOUNT; ii++)
 			{
-			ssbo_CPUMEM.dataA[ii] = vec4(ii, 0.0, 0.0, 0.0);
+			ssbo_CPUMEM.dataA[ii] = vec4(rand() % 1000, 0.0, 0.0, 0.0);
 			ssbo_CPUMEM.dataB[ii] = vec4(0.0, 0.0, 0.0, 0.0);
 			}
 		glGenBuffers(1, &ssbo_GPU_id);
@@ -128,22 +128,34 @@ public:
 
 	}
 	void compute()
-		{
+	{
 		//print data before compute shader
-		cout << endl << endl << "BUFFER BEFORE COMPUTE SHADER" << endl << endl;		
+		cout << endl << endl << "BUFFER BEFORE COMPUTE SHADER" << endl << endl;
 		for (int i = 0; i < STARCOUNT; i++)
-			cout << "dataA: " << ssbo_CPUMEM.dataA[i].x << ", " << ssbo_CPUMEM.dataA[i].y << ", " << ssbo_CPUMEM.dataA[i].z << ", " << ssbo_CPUMEM.dataA[i].w << "   dataB: "<<ssbo_CPUMEM.dataB[i].x << ", " << ssbo_CPUMEM.dataB[i].y << ", " << ssbo_CPUMEM.dataB[i].z << ssbo_CPUMEM.dataB[i].w << endl;
+			cout << "dataA: " << ssbo_CPUMEM.dataA[i].x << ", " << ssbo_CPUMEM.dataA[i].y << ", " << ssbo_CPUMEM.dataA[i].z << ", " << ssbo_CPUMEM.dataA[i].w << "   dataB: " << ssbo_CPUMEM.dataB[i].x << ", " << ssbo_CPUMEM.dataB[i].y << ", " << ssbo_CPUMEM.dataB[i].z << ssbo_CPUMEM.dataB[i].w << endl;
 
 
 		GLuint block_index = 0;
 		block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
 		GLuint ssbo_binding_point_index = 0;
+
+
 		glShaderStorageBlockBinding(computeProgram, block_index, ssbo_binding_point_index);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_GPU_id);
+
+
 		glUseProgram(computeProgram);
-		glDispatchCompute((GLuint)1024, (GLuint)1, 1);				//start compute shader
-		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+
+		bool odd = true;
+
+		for (int n = 0; n < STARCOUNT; n++){
+			glUniform1i(glGetUniformLocation(computeProgram, "odd"), odd);
+			glUniform1i(glGetUniformLocation(computeProgram, "size"), STARCOUNT);
+			glDispatchCompute((GLuint)STARCOUNT, (GLuint)1, 1);				//start compute shader
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			odd = !odd;
+		}
+		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 		
 		//copy data back to CPU MEM
 
