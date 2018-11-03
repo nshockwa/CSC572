@@ -37,6 +37,8 @@ vec3 ld = normalize(lp - texturepos);
 float light = dot(ld,texturenor);	
 light = clamp(light,0,1);
 
+//YEET
+
 //specular light
 vec3 camvec = normalize(campos - texturepos);
 vec3 h = normalize(camvec+ld);
@@ -45,5 +47,4 @@ spec = clamp(spec,0,1)*0.3;
 	
 color.rgb = texturecolor *light + vec3(1,1,1)*spec;
 color.a=1;
-color.rgb = texturepos;
 }

@@ -46,7 +46,8 @@ public:
 
 	//texture for sim
 	GLuint TextureEarth;
-	GLuint TextureMoon,FBOtex,fb,depth_rb, FBOpos, FBOnor;
+	GLuint TextureMoon,FBOtex,fb,depth_rb, FBOpos, FBOnor		unsigned int noiseTexture;
+	;
 
 	GLuint VertexArrayIDBox, VertexBufferIDBox, VertexBufferTex;
 	
@@ -173,6 +174,11 @@ public:
 
 
 	}
+	
+	float lerp(float a, float b, float f)
+	{
+		return a + f * (b - a);
+	}
 
 	void initGeom(const std::string& resourceDirectory)
 	{
@@ -184,6 +190,29 @@ public:
 		glGenBuffers(1, &VertexBufferIDBox);
 		//set the current state to focus on our vertex buffer
 		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferIDBox);
+
+		std::vector<glm::vec3> ssaoKernel;
+		for (unsigned int i = 0; i < 64; ++i)
+		{
+			float x = (float)rand() / (float)RAND_MAX * 2.0 - 1.0;
+			float y = (float)rand() / (float)RAND_MAX * 2.0 - 1.0;
+			float z = (float)rand() / (float)RAND_MAX;
+			glm::vec3 sample(x,y,z);
+			sample = glm::normalize(sample);
+			sample *= (float)rand() / (float)RAND_MAX;
+			float scale = (float)i / 64.0;
+			ssaoKernel.push_back(sample);
+		}
+		
+		std::vector<glm::vec3> ssaoNoise;
+		for (unsigned int i = 0; i < 16; i++)
+		{
+			glm::vec3 noise(
+				((float)rand() / (float)RAND_MAX) * 2.0 - 1.0,
+				(float)rand() / (float)RAND_MAX * 2.0 - 1.0,
+				0.0f);
+			ssaoNoise.push_back(noise);
+		}
 
 		GLfloat *rectangle_vertices = new GLfloat[18];
 		// front
@@ -323,6 +352,13 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_BGRA, GL_FLOAT, NULL);
 
+		glGenTextures(1, &noiseTexture);
+		glBindTexture(GL_TEXTURE_2D, noiseTexture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 		//Attach 2D texture to this FBO
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, FBOtex, 0);
