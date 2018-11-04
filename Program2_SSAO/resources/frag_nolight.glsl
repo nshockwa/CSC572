@@ -1,9 +1,10 @@
 #version 450 core 
 out vec4 color;
 in vec2 fragTex;
-layout(location = 0) uniform sampler2D tex;
-layout(location = 1) uniform sampler2D tex2;
-layout(location = 2) uniform sampler2D tex3;
+layout(location = 0) uniform sampler2D texcol;
+layout(location = 1) uniform sampler2D texpos;
+layout(location = 2) uniform sampler2D texnor;
+layout(location = 3) uniform sampler2D texssbo;
 
 uniform vec3 campos;
 
@@ -15,7 +16,7 @@ float CosInterpolate(float v1, float v2, float a)
 	}
 vec2 calc_depth_fact(vec2 texcoords)
 	{
-	float depth = texture(tex2, texcoords).b;
+	float depth = texture(texpos, texcoords).b;
 	//some number magic:
 	float processedDepthFact = depth/7.0;
 	processedDepthFact = CosInterpolate(0,5,processedDepthFact);
@@ -29,9 +30,9 @@ float partx = 1./640.;
 float party = 1./480.;
 //some extend for a 10 by 10 blurring
 float arr[]={0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216,0.001,0.0001,0.00001,0.000001,0.0,0.0};
-vec3 texturecolor = texture(tex, fragTex).rgb;
-vec3 texturepos = texture(tex2, fragTex).xyz;
-vec3 texturenor = texture(tex3, fragTex).rgb;
+vec3 texturecolor = texture(texcol, fragTex).rgb;
+vec3 texturepos = texture(texpos, fragTex).xyz;
+vec3 texturenor = texture(texnor, fragTex).rgb;
 vec3 lp = vec3(100,100,100);
 vec3 ld = normalize(lp - texturepos);
 float light = dot(ld,texturenor);	

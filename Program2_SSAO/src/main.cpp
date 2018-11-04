@@ -195,7 +195,7 @@ public:
 
 		blurProg = make_shared<Program>();
 		blurProg->setVerbose(true);
-		blurProg->setShaderNames(resourceDirectory + "/vert.glsl", resourceDirectory + "/blue_shader.glsl");
+		blurProg->setShaderNames(resourceDirectory + "/vert.glsl", resourceDirectory + "/blur_shader.glsl");
 		if (!blurProg->init())
 		{
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
@@ -203,7 +203,15 @@ public:
 		}
 		blurProg->init();
 
-
+		//finalProg = make_shared<Program>();
+		//finalProg->setVerbose(true);
+		//finalProg->setShaderNames(resourceDirectory + "/vert.glsl", resourceDirectory + "/blur_shader.glsl");
+		//if (!finalProg->init())
+		//{
+		//	std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+		//	exit(1);
+		//}
+		//finalProg->init();
 
 	}
 	
@@ -437,12 +445,16 @@ public:
 		//Does the GPU support current FBO configuration?
 
 		glUseProgram(lightProg->pid);
-		int Tex1Loc = glGetUniformLocation(lightProg->pid, "tex");//tex, tex2... sampler in the fragment shader
-		int Tex2Loc = glGetUniformLocation(lightProg->pid, "tex2");
-		int Tex3Loc = glGetUniformLocation(lightProg->pid, "tex3");
+		int Tex1Loc = glGetUniformLocation(lightProg->pid, "texcol");//tex, tex2... sampler in the fragment shader
+		int Tex2Loc = glGetUniformLocation(lightProg->pid, "texpos");
+		int Tex3Loc = glGetUniformLocation(lightProg->pid, "texnor");
+		int Tex4Loc = glGetUniformLocation(lightProg->pid, "texssbo");
+
 		glUniform1i(Tex1Loc, 0);
 		glUniform1i(Tex2Loc, 1);
-		glUniform1i(Tex3Loc, 2);
+		glUniform1i(Tex3Loc, 2);	
+		glUniform1i(Tex4Loc, 3);
+
 
 		glUseProgram(ssaoProg->pid);
 		int sTex1Loc = glGetUniformLocation(ssaoProg->pid, "gPosition");//tex, tex2... sampler in the fragment shader
@@ -548,7 +560,7 @@ public:
 		
 		//done, unbind stuff
 		geoProg->unbind();
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
 		glBindTexture(GL_TEXTURE_2D, FBOtex);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, FBOpos);
@@ -604,41 +616,18 @@ public:
 
 	void render_to_blur()
 	{
-		// Get current frame buffer size.
-
-
-
-		int width, height;
-		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
-		float aspect = width / (float)height;
-		glViewport(0, 0, width, height);
-
-		auto P = std::make_shared<MatrixStack>();
-		P->pushMatrix();
-		P->perspective(70., width, height, 0.1, 100.0f);
-		glm::mat4 M, V, S, T;
-
-		V = glm::mat4(1);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		// Clear framebuffer.
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		lightProg->bind();
+		blurProg->bind();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, FBOtex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, FBOpos);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, FBOnor);
-
-		M = glm::scale(glm::mat4(1), glm::vec3(1.2, 1, 1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
-		glUniformMatrix4fv(lightProg->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
-		glUniformMatrix4fv(lightProg->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		glUniformMatrix4fv(lightProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
 		glBindVertexArray(VertexArrayIDBox);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		lightProg->unbind();
+		blurProg->unbind();
 
 	}
 

@@ -33,8 +33,7 @@ offset      = P * offset;
 offset.xyz /= offset.w;               
 offset.xyz  = offset.xyz * 0.5 + 0.5;  
 float sampleDepth = texture(gPosition, offset.xy).z; //viewpos!!!
-float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
-//float rangeCheck = abs(fragPos.z - sampleDepth) < radius ? 1.0 : 0.0;
+float rangeCheck = abs(fragPos.z - sampleDepth) < radius ? 1.0 : 0.0;
 occlusion       += (sampleDepth >= smpl.z + bias ? 1.0 : 0.0) * rangeCheck;
 } 
 occlusion = 1.0 - (occlusion / 64);
