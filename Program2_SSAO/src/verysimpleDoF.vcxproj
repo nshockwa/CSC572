@@ -87,6 +87,9 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableModules>false</EnableModules>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <CompileAs>Default</CompileAs>
     </ClCompile>
     <Link>
       <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -142,6 +145,7 @@
     <None Include="..\resources\frag_nolight.glsl" />
     <None Include="..\resources\simple_frag.glsl" />
     <None Include="..\resources\simple_vert.glsl" />
+    <None Include="..\resources\ssao_shader.glsl" />
     <None Include="..\resources\vert.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
