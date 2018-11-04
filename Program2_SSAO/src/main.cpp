@@ -36,8 +36,7 @@ public:
 	WindowManager * windowManager = nullptr;
 
 	// Our shader program
-	std::shared_ptr<Program> geoProg, lightProg, ssaoProg;
-	;
+	std::shared_ptr<Program> geoProg, lightProg, ssaoProg, blurProg;
 
 	// Shape to be used (from obj file)
 	shared_ptr<Shape> shape,sponza;
@@ -48,10 +47,11 @@ public:
 
 	//texture for sim
 	GLuint TextureEarth;
-	GLuint TextureMoon,FBOtex,fb,depth_rb, FBOpos, FBOnor, noiseTexture, ssaoFBO, ssaoColorBuffer;
-
+	GLuint TextureMoon,FBOtex,fb,depth_rb, FBOpos, FBOnor, noiseTexture, ssaoFBO, ssaoColorBuffer, ssaoBlurFBO, ssaoColorBufferBlur;
 
 	std::vector<glm::vec3> ssaoKernel;
+	std::vector<glm::vec3> ssaoNoise;
+
 
 	GLuint VertexArrayIDBox, VertexBufferIDBox, VertexBufferTex;
 	
@@ -193,6 +193,15 @@ public:
 		ssaoProg->addAttribute("vertTex");
 
 
+		blurProg = make_shared<Program>();
+		blurProg->setVerbose(true);
+		blurProg->setShaderNames(resourceDirectory + "/vert.glsl", resourceDirectory + "/blue_shader.glsl");
+		if (!blurProg->init())
+		{
+			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+			exit(1);
+		}
+		blurProg->init();
 
 
 
@@ -226,7 +235,6 @@ public:
 			ssaoKernel.push_back(sample);
 		}
 		
-		std::vector<glm::vec3> ssaoNoise;
 		for (unsigned int i = 0; i < 16; i++)
 		{
 			glm::vec3 noise(
@@ -331,8 +339,6 @@ public:
 		glUniform1i(Tex1Location, 0);
 		glUniform1i(Tex2Location, 1);
 
-
-		glUseProgram(lightProg->pid);
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
 		glGenFramebuffers(1, &fb);
 		glActiveTexture(GL_TEXTURE0);
@@ -402,13 +408,22 @@ public:
 
 		glGenTextures(1, &ssaoColorBuffer);
 		glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBuffer, 0);
 
-		
+
+		//blur ish
+		glGenFramebuffers(1, &ssaoBlurFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+		glGenTextures(1, &ssaoColorBufferBlur);
+		glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBufferBlur, 0);
 		
 
 		//-------------------------
@@ -421,6 +436,7 @@ public:
 		//-------------------------
 		//Does the GPU support current FBO configuration?
 
+		glUseProgram(lightProg->pid);
 		int Tex1Loc = glGetUniformLocation(lightProg->pid, "tex");//tex, tex2... sampler in the fragment shader
 		int Tex2Loc = glGetUniformLocation(lightProg->pid, "tex2");
 		int Tex3Loc = glGetUniformLocation(lightProg->pid, "tex3");
@@ -547,38 +563,85 @@ public:
 		//glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		GLenum buffers[] = { GL_COLOR_ATTACHMENT0 };
-		glDrawBuffers(1, buffers);
+		//GLenum buffers[] = { GL_COLOR_ATTACHMENT0 };
+		//glDrawBuffers(1, buffers);
+		int width, height;
+		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
+		float aspect = width / (float)height;
+		glViewport(0, 0, width, height);
 
-		glClear(GL_COLOR_BUFFER_BIT);
+		auto P = std::make_shared<MatrixStack>();
+		P->pushMatrix();
+		P->perspective(70., width, height, 0.1, 100.0f);
+		glm::mat4 M, V, S, T;
+
+		V = glm::mat4(1);
+
+		// Clear framebuffer.
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		ssaoProg->bind();
+		glUniform3fv(ssaoProg->getUniform("samples"), 64, &ssaoKernel[0].x);
+		
+
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, FBOpos);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, FBOnor);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, noiseTexture);
+
+		M = glm::scale(glm::mat4(1), glm::vec3(1.2, 1, 1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
+		glUniformMatrix4fv(ssaoProg->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
+		glUniformMatrix4fv(ssaoProg->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+		glUniformMatrix4fv(ssaoProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glBindVertexArray(VertexArrayIDBox);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		ssaoProg->unbind();
+	}
+
+	void render_to_blur()
+	{
+		// Get current frame buffer size.
+
+
+
 		int width, height;
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
 		float aspect = width / (float)height;
 		glViewport(0, 0, width, height);
-		ssaoProg->bind();
-			glm::mat4 P;
-			P = glm::perspective((float)(3.14159 / 4.), (float)((float)width / (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
-			glUniformMatrix4fv(ssaoProg->getUniform("P"), 1, GL_FALSE, &P[0][0]);
 
-			//send samples
-			glUniform3fv(ssaoProg->getUniform("samples"), 64, glm::value_ptr(ssaoKernel[0]));
-			glBindVertexArray(VertexArrayIDBox);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-		ssaoProg->unbind();
-		/*glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		auto P = std::make_shared<MatrixStack>();
+		P->pushMatrix();
+		P->perspective(70., width, height, 0.1, 100.0f);
+		glm::mat4 M, V, S, T;
+
+		V = glm::mat4(1);
+
+		// Clear framebuffer.
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		lightProg->bind();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, FBOtex);
+		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, FBOpos);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, FBOnor);
-		glGenerateMipmap(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, noiseTexture);
-		glGenerateMipmap(GL_TEXTURE_2D);*/
+
+		M = glm::scale(glm::mat4(1), glm::vec3(1.2, 1, 1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
+		glUniformMatrix4fv(lightProg->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
+		glUniformMatrix4fv(lightProg->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+		glUniformMatrix4fv(lightProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glBindVertexArray(VertexArrayIDBox);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		lightProg->unbind();
+
 	}
+
 };
 //*********************************************************************************************************
 int main(int argc, char **argv)
@@ -597,7 +660,7 @@ int main(int argc, char **argv)
 	// and GL context, etc.
 
 	WindowManager *windowManager = new WindowManager();
-	windowManager->init(640, 480);
+	windowManager->init(1280, 720);
 	windowManager->setEventCallbacks(application);
 	application->windowManager = windowManager;
 
@@ -612,8 +675,8 @@ int main(int argc, char **argv)
 	{
 		// Render scene.
 		application->render_to_texture();
-		application->render_to_screen();
-		//application->render_to_ssao();
+		//application->render_to_screen();
+		application->render_to_ssao();
 		// Swap front and back buffers.
 		glfwSwapBuffers(windowManager->getHandle());
 		// Poll for and process events.

@@ -46,5 +46,6 @@ float spec = pow(dot(h,texturenor),5);
 spec = clamp(spec,0,1)*0.3;
 	
 color.rgb = texturecolor *light + vec3(1,1,1)*spec;
+
 color.a=1;
 }
