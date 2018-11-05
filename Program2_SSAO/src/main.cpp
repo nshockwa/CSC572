@@ -202,6 +202,11 @@ public:
 			exit(1);
 		}
 		blurProg->init();
+		blurProg->addUniform("P");
+		blurProg->addUniform("V");
+		blurProg->addUniform("M");
+		blurProg->addAttribute("vertPos");
+		blurProg->addAttribute("vertTex");
 
 		//finalProg = make_shared<Program>();
 		//finalProg->setVerbose(true);
@@ -445,10 +450,10 @@ public:
 		//Does the GPU support current FBO configuration?
 
 		glUseProgram(lightProg->pid);
-		int Tex1Loc = glGetUniformLocation(lightProg->pid, "texcol");//tex, tex2... sampler in the fragment shader
-		int Tex2Loc = glGetUniformLocation(lightProg->pid, "texpos");
-		int Tex3Loc = glGetUniformLocation(lightProg->pid, "texnor");
-		int Tex4Loc = glGetUniformLocation(lightProg->pid, "texssbo");
+		int Tex1Loc = glGetUniformLocation(lightProg->pid, "gPosition");//tex, tex2... sampler in the fragment shader
+		int Tex2Loc = glGetUniformLocation(lightProg->pid, "texgNormalpos");
+		int Tex3Loc = glGetUniformLocation(lightProg->pid, "gAlbedo");
+		int Tex4Loc = glGetUniformLocation(lightProg->pid, "ssao");
 
 		glUniform1i(Tex1Loc, 0);
 		glUniform1i(Tex2Loc, 1);
@@ -464,6 +469,9 @@ public:
 		glUniform1i(sTex2Loc, 1);
 		glUniform1i(sTex3Loc, 2);
 
+		glUseProgram(blurProg->pid);
+		int bTex1Loc = glGetUniformLocation(blurProg->pid, "ssaoInput");//tex, tex2... sampler in the fragment shader
+		glUniform1i(bTex1Loc, 0);
 
 		GLenum status;
 		status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -491,33 +499,31 @@ public:
 	{
 		// Get current frame buffer size.
 
-		
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		int width, height;
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
 		float aspect = width / (float)height;
 		glViewport(0, 0, width, height);
-
-		auto P = std::make_shared<MatrixStack>();
-		P->pushMatrix();	
-		P->perspective(70., width, height, 0.1, 100.0f);
-		glm::mat4 M,V,S,T;		
-	
+		glm::mat4 M, V, S, T, P;
+		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width / (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
 		V = glm::mat4(1);
-		
+		M = glm::scale(glm::mat4(1), glm::vec3(1.2, 1, 1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
 		// Clear framebuffer.
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);		
 
 		lightProg->bind();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, FBOtex);
+		glBindTexture(GL_TEXTURE_2D, FBOpos);
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, FBOpos); 
-		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, FBOnor);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, FBOtex);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
 
 		M = glm::scale(glm::mat4(1),glm::vec3(1.2,1,1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
-		glUniformMatrix4fv(lightProg->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
+		glUniformMatrix4fv(lightProg->getUniform("P"), 1, GL_FALSE, &P[0][0]);
 		glUniformMatrix4fv(lightProg->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 		glUniformMatrix4fv(lightProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glBindVertexArray(VertexArrayIDBox);
@@ -573,7 +579,7 @@ public:
 	void render_to_ssao() // aka render to texture
 	{
 		//glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
 
 		//GLenum buffers[] = { GL_COLOR_ATTACHMENT0 };
 		//glDrawBuffers(1, buffers);
@@ -582,12 +588,11 @@ public:
 		float aspect = width / (float)height;
 		glViewport(0, 0, width, height);
 
-		auto P = std::make_shared<MatrixStack>();
-		P->pushMatrix();
-		P->perspective(70., width, height, 0.1, 100.0f);
-		glm::mat4 M, V, S, T;
-
+		glm::mat4 M, V, S, T, P;
+		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width / (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
 		V = glm::mat4(1);
+		M = glm::scale(glm::mat4(1), glm::vec3(1.2, 1, 1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
+
 
 		// Clear framebuffer.
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -604,8 +609,7 @@ public:
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, noiseTexture);
 
-		M = glm::scale(glm::mat4(1), glm::vec3(1.2, 1, 1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
-		glUniformMatrix4fv(ssaoProg->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
+		glUniformMatrix4fv(ssaoProg->getUniform("P"), 1, GL_FALSE, &P[0][0]);
 		glUniformMatrix4fv(ssaoProg->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 		glUniformMatrix4fv(ssaoProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glBindVertexArray(VertexArrayIDBox);
@@ -624,6 +628,22 @@ public:
 		blurProg->bind();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+
+
+		int width, height;
+		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
+		float aspect = width / (float)height;
+		glViewport(0, 0, width, height);
+		glm::mat4 M, V, S, T, P;
+		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width / (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
+		V = glm::mat4(1);
+		M = glm::scale(glm::mat4(1), glm::vec3(1.2, 1, 1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
+
+
+
+		glUniformMatrix4fv(blurProg->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+		glUniformMatrix4fv(blurProg->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+		glUniformMatrix4fv(blurProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glBindVertexArray(VertexArrayIDBox);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -666,6 +686,8 @@ int main(int argc, char **argv)
 		application->render_to_texture();
 		//application->render_to_screen();
 		application->render_to_ssao();
+		application->render_to_blur();
+		application->render_to_screen();
 		// Swap front and back buffers.
 		glfwSwapBuffers(windowManager->getHandle());
 		// Poll for and process events.
