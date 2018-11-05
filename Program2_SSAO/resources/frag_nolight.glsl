@@ -27,7 +27,7 @@ void main()
     vec3 AmbientOcclusion = texture(ssao, fragTex).rgb;
     
     // blinn-phong (in view-space)
-    vec3 ambient = vec3(0.3 * Diffuse * AmbientOcclusion); // here we add occlusion factor
+    vec3 ambient = vec3(0.3 * Diffuse)* AmbientOcclusion; // here we add occlusion factor
     vec3 lighting  = ambient; 
     vec3 viewDir  = normalize(-FragPos); // viewpos is (0.0.0) in view-space
     // diffuse
@@ -45,5 +45,4 @@ void main()
     lighting += diffuse + specular;
 
     FragColor = vec4(lighting, 1.0);
-	FragColor = vec4(1,0,1,1);
 }

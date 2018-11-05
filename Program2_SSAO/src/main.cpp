@@ -43,6 +43,14 @@ public:
 	
 	//camera
 	camera mycam;
+	struct Light {
+		vec3 Position;
+		vec3 Color;
+
+		float Linear;
+		float Quadratic;
+		float Radius;
+	};
 
 
 	//texture for sim
@@ -158,24 +166,6 @@ public:
 		geoProg->addAttribute("vertNor");
 		geoProg->addAttribute("vertTex");
 
-
-		lightProg = make_shared<Program>();
-		lightProg->setVerbose(true);
-		lightProg->setShaderNames(resourceDirectory + "/vert.glsl", resourceDirectory + "/frag_nolight.glsl");
-		if (!lightProg->init())
-		{
-			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
-			exit(1);
-		}
-		lightProg->init();
-		lightProg->addUniform("P");
-		lightProg->addUniform("V");
-		lightProg->addUniform("M");
-		lightProg->addUniform("campos");
-		lightProg->addAttribute("vertPos");
-		lightProg->addAttribute("vertTex");
-
-
 		ssaoProg = make_shared<Program>();
 		ssaoProg->setVerbose(true);
 		ssaoProg->setShaderNames(resourceDirectory + "/vert.glsl", resourceDirectory + "/ssao_shader.glsl");
@@ -207,6 +197,23 @@ public:
 		blurProg->addUniform("M");
 		blurProg->addAttribute("vertPos");
 		blurProg->addAttribute("vertTex");
+
+
+		lightProg = make_shared<Program>();
+		lightProg->setVerbose(true);
+		lightProg->setShaderNames(resourceDirectory + "/vert.glsl", resourceDirectory + "/frag_nolight.glsl");
+		if (!lightProg->init())
+		{
+			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+			exit(1);
+		}
+		lightProg->init();
+		lightProg->addUniform("P");
+		lightProg->addUniform("V");
+		lightProg->addUniform("M");
+		lightProg->addUniform("campos");
+		lightProg->addAttribute("vertPos");
+		lightProg->addAttribute("vertTex");
 
 		//finalProg = make_shared<Program>();
 		//finalProg->setVerbose(true);
@@ -431,9 +438,10 @@ public:
 		//blur ish
 		glGenFramebuffers(1, &ssaoBlurFBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+
 		glGenTextures(1, &ssaoColorBufferBlur);
 		glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBufferBlur, 0);
@@ -451,7 +459,7 @@ public:
 
 		glUseProgram(lightProg->pid);
 		int Tex1Loc = glGetUniformLocation(lightProg->pid, "gPosition");//tex, tex2... sampler in the fragment shader
-		int Tex2Loc = glGetUniformLocation(lightProg->pid, "texgNormalpos");
+		int Tex2Loc = glGetUniformLocation(lightProg->pid, "gNormal");
 		int Tex3Loc = glGetUniformLocation(lightProg->pid, "gAlbedo");
 		int Tex4Loc = glGetUniformLocation(lightProg->pid, "ssao");
 
@@ -495,43 +503,6 @@ public:
 		return difference;
 		}
 	//*************************************
-	void render_to_screen()
-	{
-		// Get current frame buffer size.
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		int width, height;
-		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
-		float aspect = width / (float)height;
-		glViewport(0, 0, width, height);
-		glm::mat4 M, V, S, T, P;
-		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width / (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
-		V = glm::mat4(1);
-		M = glm::scale(glm::mat4(1), glm::vec3(1.2, 1, 1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
-		// Clear framebuffer.
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);		
-
-		lightProg->bind();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, FBOpos);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, FBOnor);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, FBOtex);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
-
-		M = glm::scale(glm::mat4(1),glm::vec3(1.2,1,1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
-		glUniformMatrix4fv(lightProg->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		glUniformMatrix4fv(lightProg->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		glUniformMatrix4fv(lightProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glBindVertexArray(VertexArrayIDBox);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		lightProg->unbind();
-		
-	}
 
 	void render_to_texture() // aka render to framebuffer
 	{
@@ -620,7 +591,7 @@ public:
 
 	void render_to_blur()
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
 
 		// Clear framebuffer.
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -651,6 +622,63 @@ public:
 
 	}
 
+	void render_to_screen()
+	{
+		// Get current frame buffer size.
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		int width, height;
+		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
+		float aspect = width / (float)height;
+		glViewport(0, 0, width, height);
+		glm::mat4 M, V, Vcam, S, T, P;
+		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width / (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
+		Vcam = mycam.process();
+		V = glm::mat4(1);
+
+		M = glm::scale(glm::mat4(1), glm::vec3(1.2, 1, 1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
+		// Clear framebuffer.
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		lightProg->bind();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, FBOpos);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, FBOnor);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, FBOtex);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
+		glm::vec3 lightPos = glm::vec3(0.0, 0.0, 0.0);
+		glm::vec3 lightColor = glm::vec3(0.2, 0.2, 0.7);
+		glm::vec3 lightPosView = glm::vec3(mycam.process() * glm::vec4(lightPos, 1.0));
+		
+		glUseProgram(lightProg->pid);
+		GLuint loc = glGetUniformLocation(lightProg->pid, "light.Position");
+		GLuint loc2 = glGetUniformLocation(lightProg->pid, "light.Color");
+		GLuint loc3 = glGetUniformLocation(lightProg->pid, "light.Linear");
+		GLuint loc4 = glGetUniformLocation(lightProg->pid, "light.Quadratic");
+		GLuint loc5 = glGetUniformLocation(lightProg->pid, "light.Type");
+		glUniform3fv(loc, 1, &lightPosView.x);
+		glUniform3fv(loc2, 1, &lightColor.x);
+		// Update attenuation parameters
+		const float constant = 1.0; // note that we don't send this to the shader, we assume it is always 1.0 (in our case)
+		const float linear = 0.09;
+		const float quadratic = 0.032;
+		glUniform1f(loc3, linear);
+		glUniform1f(loc4, quadratic);
+
+		M = glm::scale(glm::mat4(1), glm::vec3(1.2, 1, 1)) * glm::translate(glm::mat4(1), glm::vec3(-0.5, -0.5, -1));
+		glUniformMatrix4fv(lightProg->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+		glUniformMatrix4fv(lightProg->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+		glUniformMatrix4fv(lightProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glBindVertexArray(VertexArrayIDBox);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		lightProg->unbind();
+
+	}
 };
 //*********************************************************************************************************
 int main(int argc, char **argv)
@@ -684,7 +712,6 @@ int main(int argc, char **argv)
 	{
 		// Render scene.
 		application->render_to_texture();
-		//application->render_to_screen();
 		application->render_to_ssao();
 		application->render_to_blur();
 		application->render_to_screen();
