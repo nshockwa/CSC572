@@ -61,18 +61,63 @@ public:
 
 	std::vector<glm::vec3> ssaoKernel;
 	std::vector<glm::vec3> ssaoNoise;
-
-
+	float shadeFactor = 1.0;
 	GLuint VertexArrayIDBox, VertexBufferIDBox, VertexBufferTex;
-	
+	glm::vec3 lightPos = glm::vec3(0.0, 0.0, 0.0);
+	glm::vec3 lightColor = glm::vec3(0.2 *shadeFactor, 0.2*shadeFactor, 0.7*shadeFactor);
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
 
 	// Data necessary to give our triangle to OpenGL
 	GLuint VertexBufferID;
 
+	void randomizeColor() {
+		lightColor.r = (float)rand() / (float)RAND_MAX;
+		lightColor.g = (float)rand() / (float)RAND_MAX;
+		lightColor.b = (float)rand() / (float)RAND_MAX;
+	}	
+	void addShade() {
+		lightColor.r = lightColor.r *  0.95;
+		lightColor.g = lightColor.g * 0.95;
+		lightColor.b = lightColor.b * 0.95;
+		
+	}	
+	void addTint() {
+		shadeFactor = 1;
+		lightColor.r = (lightColor.r) * 1.05;
+		lightColor.g = (lightColor.g) * 1.05;
+		lightColor.b = (lightColor.b) * 1.05;
+	}
+
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
+		if (key == GLFW_KEY_MINUS && action == GLFW_PRESS)
+		{
+			addShade();
+		}
+		if (key == GLFW_KEY_MINUS && action == GLFW_RELEASE)
+		{
+			//shadeFactor = 0;
+		}
+
+
+		if (key == GLFW_KEY_EQUAL && action == GLFW_PRESS)
+		{
+			addTint();
+		}
+		if (key == GLFW_KEY_EQUAL && action == GLFW_RELEASE)
+		{
+			//mycam.w = 0;
+		}
+
+		if (key == GLFW_KEY_C && action == GLFW_PRESS)
+		{
+			randomizeColor();
+		}
+		if (key == GLFW_KEY_C && action == GLFW_RELEASE)
+		{
+			//mycam.w = 0;
+		}
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		{
 			glfwSetWindowShouldClose(window, GL_TRUE);
@@ -696,8 +741,7 @@ public:
 		glBindTexture(GL_TEXTURE_2D, FBOtex);
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
-		glm::vec3 lightPos = glm::vec3(0.0, 0.0, 0.0);
-		glm::vec3 lightColor = glm::vec3(0.2, 0.2, 0.7);
+		
 		glm::vec3 lightPosView = glm::vec3(lightcam.process() * glm::vec4(lightPos, 1.0));
 		
 		glUseProgram(lightProg->pid);
@@ -743,7 +787,7 @@ int main(int argc, char **argv)
 	// and GL context, etc.
 
 	WindowManager *windowManager = new WindowManager();
-	windowManager->init(1280, 720);
+	windowManager->init(2560, 1440);
 	windowManager->setEventCallbacks(application);
 	application->windowManager = windowManager;
 

@@ -9,7 +9,7 @@ layout(location = 2) uniform sampler2D texNoise;
 uniform vec3 samples[64];
 uniform mat4 P; //that must be the same projection matrix you are using in the render_to_texture ! Don't send it through the rasterizer. 
 //rename it to P if need be.
-const vec2 noiseScale = vec2(1280.0/4.0, 720.0/4.0); // screen = 1280x720
+const vec2 noiseScale = vec2(2560.0/4.0, 1440.0/4.0); // screen = 1280x720
 
 void main()
 {

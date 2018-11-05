@@ -1,0 +1,5 @@
+Added Light movement and customization...
+for random light color press c
+to shade darker press -
+to add tint and make lighter press =
+move light source with arrow keys
