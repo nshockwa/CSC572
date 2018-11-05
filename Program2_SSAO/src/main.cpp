@@ -342,6 +342,8 @@ public:
 			sample = glm::normalize(sample);
 			sample *= (float)rand() / (float)RAND_MAX;
 			float scale = (float)i / 64.0;
+			scale = lerp(0.1f, 1.0f, scale * scale);
+			sample *= scale;
 			ssaoKernel.push_back(sample);
 		}
 		
