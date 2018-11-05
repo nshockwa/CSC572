@@ -43,6 +43,8 @@ public:
 	
 	//camera
 	camera mycam;
+	camera lightcam;
+
 	struct Light {
 		vec3 Position;
 		vec3 Color;
@@ -107,6 +109,49 @@ public:
 		{
 			mycam.d = 0;
 		}
+
+
+
+		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		{
+			glfwSetWindowShouldClose(window, GL_TRUE);
+		}
+		if (key == GLFW_KEY_UP && action == GLFW_PRESS)
+		{
+			lightcam.w = 1;
+		}
+		if (key == GLFW_KEY_UP && action == GLFW_RELEASE)
+		{
+			lightcam.w = 0;
+		}
+		if (key == GLFW_KEY_DOWN && action == GLFW_PRESS)
+		{
+			lightcam.s = 1;
+		}
+		if (key == GLFW_KEY_DOWN && action == GLFW_RELEASE)
+		{
+			lightcam.s = 0;
+		}
+		if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
+		{
+			lightcam.a = 1;
+		}
+		if (key == GLFW_KEY_LEFT && action == GLFW_RELEASE)
+		{
+			lightcam.a = 0;
+		}
+		if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
+		{
+			lightcam.d = 1;
+		}
+		if (key == GLFW_KEY_RIGHT && action == GLFW_RELEASE)
+		{
+			lightcam.d = 0;
+		}
+
+
+
+
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
@@ -441,7 +486,7 @@ public:
 
 		glGenTextures(1, &ssaoColorBufferBlur);
 		glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBufferBlur, 0);
@@ -521,6 +566,7 @@ public:
 		glm::mat4 M, V, S, T, P;
 		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width / (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
 		V = mycam.process();
+		//V = glm::mat4(1);
 
 
 		//bind shader and copy matrices
@@ -591,7 +637,7 @@ public:
 
 	void render_to_blur()
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		// Clear framebuffer.
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -652,7 +698,7 @@ public:
 		glBindTexture(GL_TEXTURE_2D, ssaoColorBufferBlur);
 		glm::vec3 lightPos = glm::vec3(0.0, 0.0, 0.0);
 		glm::vec3 lightColor = glm::vec3(0.2, 0.2, 0.7);
-		glm::vec3 lightPosView = glm::vec3(mycam.process() * glm::vec4(lightPos, 1.0));
+		glm::vec3 lightPosView = glm::vec3(lightcam.process() * glm::vec4(lightPos, 1.0));
 		
 		glUseProgram(lightProg->pid);
 		GLuint loc = glGetUniformLocation(lightProg->pid, "light.Position");
