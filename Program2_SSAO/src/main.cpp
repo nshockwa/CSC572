@@ -77,16 +77,16 @@ public:
 		lightColor.b = (float)rand() / (float)RAND_MAX;
 	}	
 	void addShade() {
-		lightColor.r = lightColor.r *  0.95;
-		lightColor.g = lightColor.g * 0.95;
-		lightColor.b = lightColor.b * 0.95;
+		lightColor.r = lightColor.r *  0.90;
+		lightColor.g = lightColor.g * 0.90;
+		lightColor.b = lightColor.b * 0.90;
 		
 	}	
 	void addTint() {
 		shadeFactor = 1;
-		lightColor.r = (lightColor.r) * 1.05;
-		lightColor.g = (lightColor.g) * 1.05;
-		lightColor.b = (lightColor.b) * 1.05;
+		lightColor.r = (lightColor.r) * 1.10;
+		lightColor.g = (lightColor.g) * 1.10;
+		lightColor.b = (lightColor.b) * 1.10;
 	}
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -337,7 +337,7 @@ public:
 		{
 			float x = (float)rand() / (float)RAND_MAX * 2.0 - 1.0;
 			float y = (float)rand() / (float)RAND_MAX * 2.0 - 1.0;
-			float z = (float)rand() / (float)RAND_MAX;
+			float z = (float)rand() / (float)RAND_MAX * 2.0 - 1.0;
 			glm::vec3 sample(x,y,z);
 			sample = glm::normalize(sample);
 			sample *= (float)rand() / (float)RAND_MAX;
@@ -360,12 +360,12 @@ public:
 		// front
 		int verccount = 0;
 
-		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
-		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
-		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
-		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = -1.0, rectangle_vertices[verccount++] = -1.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = -1.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = -1.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = -1.0, rectangle_vertices[verccount++] = 0.0;
 		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
-		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = -1.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
 
 
 		//actually memcopy the data - only do this once

@@ -3,3 +3,9 @@ for random light color press c
 to shade darker press -
 to add tint and make lighter press =
 move light source with arrow keys
+
+
+ALSO ADDED A FUNKY VIDEO!
+check the link here: https://www.youtube.com/watch?v=YfXYlw0HA_Y
+
+or download it!
