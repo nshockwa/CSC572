@@ -55,5 +55,8 @@
     <None Include="..\resources\compute_collect.glsl">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\resources\compute_blur.glsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -104,7 +104,8 @@ public:
 	GLuint TextureEarth, TextureWall;
 	GLuint TextureMoon, FBOtex, FBOmask, fb, depth_rb;
 	GLuint FBOtex_shadowMapDepth, fb_shadowMap;
-    GLuint CScollect;
+	GLuint CScollect;
+	GLuint CSblur;
 	glm::mat4 M_Earth;
 	glm::mat4 M_Moon;
 	glm::mat4 M_Sponza;
@@ -349,6 +350,8 @@ public:
 		shadowProg->addAttribute("vertPos");
 
         CScollect = init_computeshader(resourceDirectory + "/compute_collect.glsl");
+		CSblur = init_computeshader(resourceDirectory + "/compute_blur.glsl");
+
 	}
 
 	void initGeom(const std::string& resourceDirectory)
@@ -537,7 +540,7 @@ public:
         glDispatchCompute((GLuint)640, (GLuint)480, 1);   			 //start compute shader
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-
+		compute_blur();
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBOid);
         GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
@@ -549,6 +552,23 @@ public:
         glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo_data), &SSBOpixels, GL_DYNAMIC_COPY);
 
     }
+	void compute_blur()
+	{
+		glUseProgram(CSblur);
+		GLuint block_index = 0;
+		block_index = glGetProgramResourceIndex(CSblur, GL_SHADER_STORAGE_BLOCK, "shader_data");
+		GLuint ssbo_binding_point_index = 0;
+		glShaderStorageBlockBinding(CSblur, block_index, ssbo_binding_point_index);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBOid);
+
+		glBindImageTexture(0, FBOtex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+		glDispatchCompute((GLuint)16383, (GLuint)1, 1);   			 //start compute shader
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+
+	}
+
+
 
 	//*************************************
 	double get_last_elapsed_time()
