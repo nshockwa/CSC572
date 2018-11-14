@@ -104,6 +104,8 @@ public:
 	const vec3 origin = glm::vec3(0, 0, 0);
 	const vec3 moon_pos_offset = glm::vec3(-0.7, 0, 0.7);
 	int key_j = 0, key_i = 0, key_k = 0, key_l = 0;
+	int key_w = 0, key_a = 0, key_s = 0, key_d = 0;
+
 	
 	GLuint VertexArrayIDBox, VertexBufferIDBox, VertexBufferTex, VertexBufferIDNorm;
 	
@@ -123,7 +125,7 @@ public:
 		{
 			glfwSetWindowShouldClose(window, GL_TRUE);
 		}
-		if (key == GLFW_KEY_W && action == GLFW_PRESS)
+		/*if (key == GLFW_KEY_W && action == GLFW_PRESS)
 		{
 			mycam.w = 1;
 		}
@@ -154,7 +156,7 @@ public:
 		if (key == GLFW_KEY_D && action == GLFW_RELEASE)
 		{
 			mycam.d = 0;
-		}
+		}*/
 		if (key == GLFW_KEY_Y && action == GLFW_RELEASE)
 		{
 			show_shadowmap = !show_shadowmap;
@@ -167,6 +169,15 @@ public:
 		if (key == GLFW_KEY_K && action == GLFW_RELEASE)	key_k = 0;
 		if (key == GLFW_KEY_L && action == GLFW_PRESS)		key_l = 1;
 		if (key == GLFW_KEY_L && action == GLFW_RELEASE)	key_l = 0;
+
+		if (key == GLFW_KEY_W && action == GLFW_PRESS)		key_w = 1;
+		if (key == GLFW_KEY_W && action == GLFW_RELEASE)	key_w = 0;
+		if (key == GLFW_KEY_A && action == GLFW_PRESS)		key_a = 1;
+		if (key == GLFW_KEY_A && action == GLFW_RELEASE)	key_a = 0;
+		if (key == GLFW_KEY_S && action == GLFW_PRESS)		key_s = 1;
+		if (key == GLFW_KEY_S && action == GLFW_RELEASE)	key_s = 0;
+		if (key == GLFW_KEY_D && action == GLFW_PRESS)		key_d = 1;
+		if (key == GLFW_KEY_D && action == GLFW_RELEASE)	key_d = 0;
 	}
 
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
@@ -319,6 +330,7 @@ public:
 		prog2->addUniform("P");
 		prog2->addUniform("V");
 		prog2->addUniform("M");
+		prog2->addUniform("t");
 		prog2->addAttribute("vertPos");
 		prog2->addAttribute("vertTex");
 
@@ -500,7 +512,7 @@ public:
 		init_screen_texture_fbo();
 
 
-		voxeltexture = make3DTexture(VOXELSIZE, VOXELSIZE, VOXELSIZE, 1, GL_RGBA16F, GL_NEAREST, GL_NEAREST);
+		voxeltexture = make3DTexture(VOXELSIZE, VOXELSIZE, VOXELSIZE, 1, GL_RGBA16F, GL_LINEAR, GL_LINEAR);
 		int z;
 		z = 0;
 	}
@@ -549,9 +561,10 @@ public:
 		glUniformMatrix4fv(prog2->getUniform("P"), 1, GL_FALSE, glm::value_ptr(P->topMatrix()));
 		glUniformMatrix4fv(prog2->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 		glUniformMatrix4fv(prog2->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glUniform1f(prog2->getUniform("t"), (0.5 * std::sin(glfwGetTime()/2)));
 		glBindVertexArray(VertexArrayIDBox);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-
+				
 		prog2->unbind();
 		glClearTexImage(voxeltexture, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 
@@ -564,7 +577,6 @@ public:
 
 		//update camera
 		mycam.process();
-
 		// update light
 		if (key_i == 1)
 			{
@@ -588,22 +600,42 @@ public:
 			}
 
 		//update models
-		static float angle = 0;
-		angle += 0.02;
+		static float angley = 0;	
+		static float anglex = 0;
+		
 		M_Earth = glm::translate(glm::mat4(1.f), earth_pos);
-		glm::mat4 Ry = glm::rotate(glm::mat4(1.f), angle, glm::vec3(0, 1, 0));
 		float pih = -3.1415926 / 2.0;
-		glm::mat4 Rx = glm::rotate(glm::mat4(1.f), pih, glm::vec3(1, 0, 0));
-		glm::mat4 Se = glm::scale(glm::mat4(1.f), glm::vec3(0.65, 0.65, 0.65));
-		M_Earth = M_Earth * Ry * Rx*Se;
+
+		if (key_w == 1)
+		{
+			anglex += 0.2;
+		}
+		if (key_s == 1)
+		{
+			anglex -= 0.2;
+		}
+		if (key_a == 1)
+		{
+			angley -= 0.2;
+		}
+		if (key_d == 1)
+		{
+			angley += 0.2;
+		}
+		glm::mat4 Ry = glm::rotate(glm::mat4(1.f), angley, glm::vec3(0, 1, 0));
+		glm::mat4 Rx = glm::rotate(glm::mat4(1.f), anglex, glm::vec3(1, 0, 0));
+		glm::mat4 Rxi = glm::rotate(glm::mat4(1.f), pih, glm::vec3(1, 0, 0));
+
+		glm::mat4 Se = glm::scale(glm::mat4(1.f), glm::vec3(2.0, 2.0, 2.0));
+		M_Earth = M_Earth * Ry * Rxi * Rx*Se;
 
 		static float moonangle = 0;
 		moonangle += 0.005;
-		M_Moon = glm::translate(glm::mat4(1.f), moon_pos_offset);
+		
 		glm::mat4 Ryrad = glm::rotate(glm::mat4(1.f), moonangle, glm::vec3(0, 1, 0));
 		glm::mat4 T = glm::translate(glm::mat4(1.f), earth_pos);
 		glm::mat4 S = glm::scale(glm::mat4(1.f), glm::vec3(0.15, 0.15, 0.15));
-		M_Moon = T * Ryrad * M_Moon * Rx * S;
+		
 
 		static float sponzaangle = pih;	
 		M_Sponza = glm::rotate(glm::mat4(1.f), sponzaangle, glm::vec3(0, 1, 0))*glm::scale(glm::mat4(1), glm::vec3(10.0, 10.0, 10.0));

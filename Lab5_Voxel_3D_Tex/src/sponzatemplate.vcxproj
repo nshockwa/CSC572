@@ -147,9 +147,6 @@
     <None Include="..\resources\simple_vert.glsl" />
     <None Include="..\resources\vert.glsl" />
   </ItemGroup>
-  <ItemGroup>
-    <Object Include="..\resources\t800.obj" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

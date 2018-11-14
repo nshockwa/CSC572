@@ -53,7 +53,4 @@
       <Filter>shader</Filter>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Object Include="..\resources\t800.obj" />
-  </ItemGroup>
 </Project>
