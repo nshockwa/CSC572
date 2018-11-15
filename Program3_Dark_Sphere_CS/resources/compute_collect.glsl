@@ -18,7 +18,7 @@ void main()
         //store the pixel coords
         int index = atomicAdd (pixels[16383].x, 1); 
 
-        if(index >= 18382) 
+        if(index >= 16383)
             return;
         pixels[index] = pixel_coords;
     }

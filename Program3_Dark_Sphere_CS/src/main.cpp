@@ -464,7 +464,7 @@ public:
 		string str = resourceDirectory + "/earth.jpg";
 		strcpy(filepath, str.c_str());
 		unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
-		glGenTextures(1, &TextureEarth);
+		/*glGenTextures(1, &TextureEarth);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, TextureEarth);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -472,7 +472,7 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		glGenerateMipmap(GL_TEXTURE_2D);*/
 
 		//texture moon
 		str = resourceDirectory + "/moon.jpg";
@@ -535,7 +535,7 @@ public:
         GLuint ssbo_binding_point_index = 0;
         glShaderStorageBlockBinding(CScollect, block_index, ssbo_binding_point_index);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBOid);
-
+		
         glBindImageTexture(0, FBOmask, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
         glDispatchCompute((GLuint)640, (GLuint)480, 1);   			 //start compute shader
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -560,9 +560,12 @@ public:
 		GLuint ssbo_binding_point_index = 0;
 		glShaderStorageBlockBinding(CSblur, block_index, ssbo_binding_point_index);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBOid);
+		bool direction = 0;
+		glUniform1i(glGetUniformLocation(CSblur, "direction"), direction);
 
 		glBindImageTexture(0, FBOtex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
 		glDispatchCompute((GLuint)16384, (GLuint)1, 1);   			 //start compute shader
+		direction = !direction;
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 
