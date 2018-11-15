@@ -7,6 +7,8 @@ layout (std430, binding=0) volatile buffer shader_data
   ivec2 pixels[16384];
 };
 
+layout(location=0) uniform int direction;
+
 
 //void main()
 //    {
@@ -35,7 +37,7 @@ layout (std430, binding=0) volatile buffer shader_data
 //    }
 
 
-//
+//WORKING SOMEWHAT
 void main() 
 {
 	uint index = uint(gl_GlobalInvocationID.x); 
@@ -54,7 +56,33 @@ void main()
     }
 
     vec4 FragColor = vec4(result / (4.0 * 4.0),1);
-//	imageStore(img_blur, texcoords, vec4(0.0,1.0,1.0,1.0));
 	imageStore(img_blur, texcoords, FragColor);
 
 }
+//
+//void main() 
+//{
+//	float weights[] = { 0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216 };
+//	uint index = uint(gl_GlobalInvocationID.x); 
+//	if (index> pixels[16383].x) return;
+//	vec3 texturecolor = vec3(0,0,0);
+//	ivec2 texcoords = ivec2(pixels[index]); 
+//	vec2 texelSize = vec2(1.0 / 16384);
+//	int r =20;
+//    for (int i = -r; i < r; ++i) 
+//    {
+//		vec3 col;
+//		if(direction==1){
+//			col = vec3(imageLoad(img_blur, ivec2(texcoords.x+ i, texcoords.y)).rgb);
+//		}
+//		else{
+//            col = vec3(imageLoad(img_blur, ivec2(texcoords.x, texcoords.y+i)).rgb);
+//		}
+//		if (i == 0) continue;
+//		int wi = abs(i);
+//		texturecolor += col * weights[wi - 1];
+//    }
+//	imageStore(img_blur, texcoords, vec4(texturecolor,1.0));
+//
+//}
+//

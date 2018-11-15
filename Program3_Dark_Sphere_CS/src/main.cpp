@@ -653,13 +653,13 @@ public:
 
 		//update models
 		static float angle = 0;
-		angle += 0.02;
+		
 		M_Earth = glm::translate(glm::mat4(1.f), earth_pos);
 		glm::mat4 Ry = glm::rotate(glm::mat4(1.f), angle, glm::vec3(0, 1, 0));
 		float pih = -3.1415926 / 2.0;
 		glm::mat4 Rx = glm::rotate(glm::mat4(1.f), pih, glm::vec3(1, 0, 0));
 		glm::mat4 Se = glm::scale(glm::mat4(1.f), glm::vec3(0.65, 0.65, 0.65));
-		M_Earth = M_Earth * Ry * Rx*Se;
+		M_Earth = M_Earth*Se;
 
 		static float moonangle = 0;
 		moonangle += 0.005;
