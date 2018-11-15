@@ -7,11 +7,11 @@ layout (std430, binding=0) volatile buffer shader_data
   ivec2 pixels[16384];
 };
 
-//pixels[16383].x
 
 void main()
     {
     uint index = uint(gl_GlobalInvocationID.x);
 	ivec2 texcoords = pixels[index];
-	imageStore(img_blur, texcoords, vec4(0,1,1,1));
+	imageStore(img_blur, texcoords, vec4(1.0,0.0,0.0,1.0));
     }
+

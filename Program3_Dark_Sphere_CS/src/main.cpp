@@ -562,7 +562,7 @@ public:
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBOid);
 
 		glBindImageTexture(0, FBOtex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
-		glDispatchCompute((GLuint)16383, (GLuint)1, 1);   			 //start compute shader
+		glDispatchCompute((GLuint)16384, (GLuint)1, 1);   			 //start compute shader
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 
