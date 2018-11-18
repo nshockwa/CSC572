@@ -45,7 +45,7 @@ void main()
 	ivec2 texcoords = ivec2(pixels[index]); 
 	vec2 texelSize = vec2(1.0 / 16384);
     vec3 result = vec3(0.0,0.0,0.0);
-	int r =5;
+	int r =15;
     for (int x = -r; x < r; ++x) 
     {
         for (int y = -r; y < r; ++y) 
@@ -55,7 +55,7 @@ void main()
         }
     }
 
-    vec4 FragColor = vec4(result / (4.0 * 4.0),1);
+    vec4 FragColor = vec4(result / (r*2.0 * r*2.0),1);
 	imageStore(img_blur, texcoords, FragColor);
 
 }
