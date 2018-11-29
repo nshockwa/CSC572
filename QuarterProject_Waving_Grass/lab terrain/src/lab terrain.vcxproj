@@ -25,9 +25,11 @@
     <ClCompile Include="MatrixStack.cpp" />
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="Shape.cpp" />
+    <ClCompile Include="getbmp.cpp" />
     <ClCompile Include="WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="getbmp.h" />
     <ClInclude Include="GLSL.h" />
     <ClInclude Include="MatrixStack.h" />
     <ClInclude Include="Program.h" />

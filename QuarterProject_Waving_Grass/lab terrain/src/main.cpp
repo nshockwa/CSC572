@@ -73,9 +73,20 @@ public:
 
 	WindowManager * windowManager = nullptr;
 
+	//billboard ish
+		#define PI 3.14159265358979324
+		// Globals.
+    unsigned int billboardtex; // Array of texture indices.
+	float d = 40.0; // Distance of the trees image parallel to the line of sight.
+	float b = 20.0; // Displacement of the trees image left of line of sight.
+	int isBillboard = 0; // Is billboarding on?
+	
+	
+	GLuint VertexArrayIDBox, VertexBufferIDBox, VertexBufferTex;
+
 	// Our shader program
 	std::shared_ptr<Program> prog, heightshader;
-
+	vec3 grassPositions[1000];
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
 
@@ -83,7 +94,7 @@ public:
 	GLuint MeshPosID, MeshTexID, IndexBufferIDBox;
 
 	//texture data
-	GLuint Texture;
+	GLuint Texture, grassTex;
 	GLuint Texture2,HeightTex;
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -162,6 +173,7 @@ public:
 #define MESHSIZE 100
 	void init_mesh()
 	{
+
 		//generate the VAO
 		glGenVertexArrays(1, &VertexArrayID);
 		glBindVertexArray(VertexArrayID);
@@ -215,15 +227,80 @@ public:
 			}			
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*MESHSIZE * MESHSIZE * 6, elements, GL_STATIC_DRAW);
 		glBindVertexArray(0);
+
+
+
 	}
 	/*Note that any gl calls must always happen after a GL state is initialized */
 	void initGeom()
 	{
+		//int idx = 0;
+		//	for (int x=-10; x< 10; x++){
+		//		for (int y = -10; y < 10; y++) {
+		//			for (int z = -10; z < 10; z++) {
+		//				grassPositions[idx++] = vec3(x, y, z);
+		//			}
+		//		}
+
+		//}
+	//init rectangle mesh (2 triangles) for the post processing
+		glGenVertexArrays(1, &VertexArrayIDBox);
+		glBindVertexArray(VertexArrayIDBox);
+
+		//generate vertex buffer to hand off to OGL
+		glGenBuffers(1, &VertexBufferIDBox);
+		//set the current state to focus on our vertex buffer
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferIDBox);
+
+		GLfloat *rectangle_vertices = new GLfloat[18];
+		// front
+		int verccount = 0;
+
+		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
+
+
+		//actually memcopy the data - only do this once
+		glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(float), rectangle_vertices, GL_STATIC_DRAW);
+		//we need to set up the vertex array
+		glEnableVertexAttribArray(0);
+		//key function to get up how many elements to pull out at a time (3)
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+
+		//generate vertex buffer to hand off to OGL
+		glGenBuffers(1, &VertexBufferTex);
+		//set the current state to focus on our vertex buffer
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferTex);
+
+		float t = 1. / 100.;
+		GLfloat *rectangle_texture_coords = new GLfloat[12];
+		int texccount = 0;
+		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 0;
+		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 0;
+		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 1;
+		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 0;
+		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 1;
+		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 1;
+
+		//actually memcopy the data - only do this once
+		glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), rectangle_texture_coords, GL_STATIC_DRAW);
+		//we need to set up the vertex array
+		glEnableVertexAttribArray(2);
+		//key function to get up how many elements to pull out at a time (3)
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+
 		//initialize the net mesh
 		init_mesh();
 
 		string resourceDirectory = "../resources" ;
 		// Initialize mesh.
+		
 		shape = make_shared<Shape>();
 		//shape->loadMesh(resourceDirectory + "/t800.obj");
 		shape->loadMesh(resourceDirectory + "/sphere.obj");
@@ -274,6 +351,19 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
+		//my grass tex
+		str = resourceDirectory + "/grass.png";
+		strcpy(filepath, str.c_str());
+		data = stbi_load(filepath, &width, &height, &channels, 4);
+		glGenTextures(1, &grassTex);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, grassTex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
 
 		//[TWOTEXTURES]
 		//set the 2 textures to the correct samplers in the fragment shader:
@@ -320,6 +410,7 @@ public:
 		prog->addUniform("V");
 		prog->addUniform("M");
 		prog->addUniform("campos");
+		prog->addUniform("camoff");
 		prog->addAttribute("vertPos");
 		prog->addAttribute("vertNor");
 		prog->addAttribute("vertTex");
@@ -380,13 +471,10 @@ public:
 		static float w = 0.0;
 		w += 1.0 * frametime;//rotation angle
 		float trans = 0;// sin(t) * 2;
-		glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), w, glm::vec3(0.0f, 1.0f, 0.0f));
-		float angle = -3.1415926/2.0;
-		glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
-		glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3 + trans));
-		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.8f, 0.8f, 0.8f));
+		
+		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
 
-		M =  TransZ * RotateY * RotateX * S;
+		M = S;
 
 		// Draw the box using GLSL.
 		prog->bind();
@@ -395,11 +483,33 @@ public:
 		//send the matrices to the shaders
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
 		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+
 		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
+		
+
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture);
-		shape->draw(prog,FALSE);
+		glBindTexture(GL_TEXTURE_2D, grassTex);
+		
+		glBindVertexArray(VertexArrayIDBox);
+
+		vec3 offset2 = mycam.pos;
+		offset2.y = 0;
+		offset2.x = (int)offset2.x;
+		offset2.z = (int)offset2.z;
+		glUniform3fv(prog->getUniform("camoff"), 1, &offset2[0]);
+		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
+
+		for (int x = -10; x < 10; x++) {
+			for (int y = -10; y < 10; y++) {
+				for (int z = -10; z < 10; z++) {
+					mat4 resM = glm::translate(glm::mat4(1.0f), vec3(x,-2,z)) * M;
+					glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &resM[0][0]);
+					glDrawArrays(GL_TRIANGLES, 0, 6);
+				}
+			}
+		}
+		prog->unbind();
+
 
 		heightshader->bind();
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -414,6 +524,7 @@ public:
 		offset.y = 0;
 		offset.x = (int)offset.x;
 		offset.z = (int)offset.z;
+		cout << offset.x << endl;
 		glUniform3fv(heightshader->getUniform("camoff"), 1, &offset[0]);
 		glUniform3fv(heightshader->getUniform("campos"), 1, &mycam.pos[0]);
 		glBindVertexArray(VertexArrayID);
