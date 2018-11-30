@@ -135,9 +135,18 @@ void main()
 	//		----------------------		tracing in normal direction			----------------------
 	
 	vec3 texpos = voxel_transform(worldpos);
-	
+	float reflective_cone_angle = 0.10; 
+	float step_factor=0.5;
+	float cut_off_alpha = 3.5;
+
+
 	float coneHalfAngle = 0.571239; //27 degree
 	vec3 voxelcolor = cone_tracing(normal,worldpos,coneHalfAngle,1,1);
+	voxelcolor += (cone_tracing((normal + tangent) / 2, worldpos, coneHalfAngle, 1, 1) * 0.7);
+	voxelcolor += (cone_tracing((normal - tangent) / 2, worldpos, coneHalfAngle, 1, 1) * 0.7);
+	voxelcolor += (cone_tracing((normal + binorm) / 2, worldpos, coneHalfAngle, 1, 1) * 0.7);
+	voxelcolor += (cone_tracing((normal - binorm) / 2, worldpos, coneHalfAngle, 1, 1) * 0.7);
+	voxelcolor += cone_tracing(reflect(-camvec, normal), worldpos, reflective_cone_angle, step_factor, cut_off_alpha);
 
 	float magn = length(voxelcolor);
 	color.rgb = texturecolor+voxelcolor;
