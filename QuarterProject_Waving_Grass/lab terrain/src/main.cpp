@@ -14,11 +14,21 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 #include "Shape.h"
 // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
+#include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 using namespace std;
 using namespace glm;
 shared_ptr<Shape> shape;
 
+struct distCalc{
+	float distance;
+	vec3 pos;
+};
+
+bool disComp(distCalc a, distCalc b)
+{
+	return a.distance > b.distance;
+}
 
 double get_last_elapsed_time()
 {
@@ -86,7 +96,8 @@ public:
 
 	// Our shader program
 	std::shared_ptr<Program> prog, heightshader;
-	vec3 grassPositions[1000];
+	#define GRASS_ARR_SIZE 10000
+	distCalc grassPositions[GRASS_ARR_SIZE];
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
 
@@ -140,6 +151,7 @@ public:
 
 	// callback for the mouse when clicked move the triangle when helper functions
 	// written
+
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
 	{
 		double posX, posY;
@@ -231,19 +243,47 @@ public:
 
 
 	}
+
+	//typedef std::pair<glm::vec3, glm::vec3> vec3pair;
+	//struct distCalc {
+	//	float distance;
+	//	vec3 pos;
+	//};
+
+	//bool compareDistance(distCalc A, distCalc B) {
+	//	return distance( mycam.pos) < distance(B, mycam.pos);
+	//}
 	/*Note that any gl calls must always happen after a GL state is initialized */
 	void initGeom()
 	{
-		//int idx = 0;
-		//	for (int x=-10; x< 10; x++){
-		//		for (int y = -10; y < 10; y++) {
-		//			for (int z = -10; z < 10; z++) {
-		//				grassPositions[idx++] = vec3(x, y, z);
-		//			}
-		//		}
+		int idx = 0;
+		for (int x=-MESHSIZE/2; x< MESHSIZE/2; x++){
+			for (int z = -MESHSIZE/2; z < MESHSIZE/2; z++) {
+						grassPositions[idx].pos = glm::vec3(x, mycam.pos.y, z);
+						grassPositions[idx].distance = distance(grassPositions[idx].pos, -mycam.pos);
+						idx++;
+					}
+				}
+		cout << "unSorted Array looks like this." << endl;
+		cout << "unSorted Array looks like this." << endl;
+		cout << "unSorted Array looks like this." << endl;
+		cout << "unSorted Array looks like this." << endl;
+		cout << "unSorted Array looks like this." << endl;
 
-		//}
-	//init rectangle mesh (2 triangles) for the post processing
+		//std::vector<int> grassvector(begin(grassPositions), end(grassPositions));
+		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
+			cout << "grassPositions[" << i << "] (" << grassPositions[i].pos.x << ", " << grassPositions[i].pos.y << ", " << grassPositions[i].pos.z << ")" << endl;
+
+		sort(&grassPositions[0], &grassPositions[10000], disComp);	//init rectangle mesh (2 triangles) for the post processing
+		//std::sort(grassvector.begin(), grassvector.end(), compareDistance);	//init rectangle mesh (2 triangles) for the post processing
+		cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
+			cout << "grassPositions[" << i << "] (" << grassPositions[i].pos.x << ", " << grassPositions[i].pos.y << ", " << grassPositions[i].pos.z << ")" << endl;
+
 		glGenVertexArrays(1, &VertexArrayIDBox);
 		glBindVertexArray(VertexArrayIDBox);
 
@@ -352,16 +392,16 @@ public:
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		//my grass tex
-		str = resourceDirectory + "/grass.png";
+		str = resourceDirectory + "/mygrass.jpg";
 		strcpy(filepath, str.c_str());
 		data = stbi_load(filepath, &width, &height, &channels, 4);
 		glGenTextures(1, &grassTex);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, grassTex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -471,10 +511,6 @@ public:
 		static float w = 0.0;
 		w += 1.0 * frametime;//rotation angle
 		float trans = 0;// sin(t) * 2;
-		
-		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
-
-		M = S;
 
 		// Draw the box using GLSL.
 		prog->bind();
@@ -486,6 +522,10 @@ public:
 
 		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
 		
+		mat4 Vi = glm::transpose(V);
+		Vi[0][3] = 0;
+		Vi[1][3] = 0;
+		Vi[2][3] = 0;
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, grassTex);
@@ -499,14 +539,12 @@ public:
 		glUniform3fv(prog->getUniform("camoff"), 1, &offset2[0]);
 		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
 
-		for (int x = -10; x < 10; x++) {
-			for (int y = -10; y < 10; y++) {
-				for (int z = -10; z < 10; z++) {
-					mat4 resM = glm::translate(glm::mat4(1.0f), vec3(x,-2,z)) * M;
+		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
+		{
+					mat4 resM = glm::translate(glm::mat4(1.0f), vec3(grassPositions[i].pos.x, -2.5f ,grassPositions[i].pos.z));
+					M = resM * Vi;
 					glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &resM[0][0]);
 					glDrawArrays(GL_TRIANGLES, 0, 6);
-				}
-			}
 		}
 		prog->unbind();
 
