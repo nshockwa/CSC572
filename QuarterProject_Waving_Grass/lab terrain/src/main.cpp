@@ -97,9 +97,11 @@ public:
 	// Our shader program
 	std::shared_ptr<Program> prog, heightshader;
 	#define GRASS_ARR_SIZE 10000
-	distCalc grassPositions[GRASS_ARR_SIZE];
+	distCalc grassCalc[GRASS_ARR_SIZE];
+	vec3 grassPositions[GRASS_ARR_SIZE];
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
+	GLuint instanceVBO;
 
 	// Data necessary to give our box to OpenGL
 	GLuint MeshPosID, MeshTexID, IndexBufferIDBox;
@@ -254,36 +256,9 @@ public:
 	//	return distance( mycam.pos) < distance(B, mycam.pos);
 	//}
 	/*Note that any gl calls must always happen after a GL state is initialized */
+
 	void initGeom()
 	{
-		int idx = 0;
-		for (int x=-MESHSIZE/2; x< MESHSIZE/2; x++){
-			for (int z = -MESHSIZE/2; z < MESHSIZE/2; z++) {
-						grassPositions[idx].pos = glm::vec3(x, mycam.pos.y, z);
-						grassPositions[idx].distance = distance(grassPositions[idx].pos, -mycam.pos);
-						idx++;
-					}
-				}
-		cout << "unSorted Array looks like this." << endl;
-		cout << "unSorted Array looks like this." << endl;
-		cout << "unSorted Array looks like this." << endl;
-		cout << "unSorted Array looks like this." << endl;
-		cout << "unSorted Array looks like this." << endl;
-
-		//std::vector<int> grassvector(begin(grassPositions), end(grassPositions));
-		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
-			cout << "grassPositions[" << i << "] (" << grassPositions[i].pos.x << ", " << grassPositions[i].pos.y << ", " << grassPositions[i].pos.z << ")" << endl;
-
-		sort(&grassPositions[0], &grassPositions[10000], disComp);	//init rectangle mesh (2 triangles) for the post processing
-		//std::sort(grassvector.begin(), grassvector.end(), compareDistance);	//init rectangle mesh (2 triangles) for the post processing
-		cout << "Sorted Array looks like this." << endl;
-		cout << "Sorted Array looks like this." << endl;
-		cout << "Sorted Array looks like this." << endl;
-		cout << "Sorted Array looks like this." << endl;
-		cout << "Sorted Array looks like this." << endl;
-		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
-			cout << "grassPositions[" << i << "] (" << grassPositions[i].pos.x << ", " << grassPositions[i].pos.y << ", " << grassPositions[i].pos.z << ")" << endl;
-
 		glGenVertexArrays(1, &VertexArrayIDBox);
 		glBindVertexArray(VertexArrayIDBox);
 
@@ -425,6 +400,60 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+
+		/* GRASS POSITIONS*/
+
+		glGenBuffers(1, &instanceVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * GRASS_ARR_SIZE, &grassPositions[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
+		int idx = 0;
+		for (int x = -MESHSIZE / 2; x < MESHSIZE / 2; x++) {
+			for (int z = -MESHSIZE / 2; z < MESHSIZE / 2; z++) {
+				grassCalc[idx].pos = glm::vec3(x, mycam.pos.y, z);
+				grassCalc[idx].distance = distance(grassCalc[idx].pos, -mycam.pos);
+				idx++;
+			}
+		}
+		cout << "unSorted Array looks like this." << endl;
+		cout << "unSorted Array looks like this." << endl;
+		cout << "unSorted Array looks like this." << endl;
+		cout << "unSorted Array looks like this." << endl;
+		cout << "unSorted Array looks like this." << endl;
+
+		//std::vector<int> grassvector(begin(grassPositions), end(grassPositions));
+		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
+			cout << "grassCalc[" << i << "] (" << grassCalc[i].pos.x << ", " << grassCalc[i].pos.y << ", " << grassCalc[i].pos.z << ")" << endl;
+
+		sort(&grassCalc[0], &grassCalc[GRASS_ARR_SIZE], disComp);	//init rectangle mesh (2 triangles) for the post processing
+		//std::sort(grassvector.begin(), grassvector.end(), compareDistance);	//init rectangle mesh (2 triangles) for the post processing
+		cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
+			cout << "grassCalc[" << i << "] (" << grassCalc[i].pos.x << ", " << grassCalc[i].pos.y << ", " << grassCalc[i].pos.z << ")" << endl;
+
+		idx = 0;
+		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
+		{
+			grassPositions[idx++] = grassCalc[i].pos;
+			cout << "grassPositions[" << i << "] (" << grassPositions[i].x << ", " << grassPositions[i].y << ", " << grassPositions[i].z << ")" << endl;
+		}
+
+
+		//instanceVBO
+
+
+		glEnableVertexAttribArray(3);
+		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glVertexAttribDivisor(3, 1);
+
 	}
 
 	//General OGL initialization - set OGL state here
@@ -530,7 +559,6 @@ public:
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, grassTex);
 		
-		glBindVertexArray(VertexArrayIDBox);
 
 		vec3 offset2 = mycam.pos;
 		offset2.y = 0;
@@ -539,13 +567,11 @@ public:
 		glUniform3fv(prog->getUniform("camoff"), 1, &offset2[0]);
 		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
 
-		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
-		{
-					mat4 resM = glm::translate(glm::mat4(1.0f), vec3(grassPositions[i].pos.x, -2.5f ,grassPositions[i].pos.z));
-					M = resM * Vi;
-					glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &resM[0][0]);
-					glDrawArrays(GL_TRIANGLES, 0, 6);
-		}
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glBindVertexArray(VertexArrayIDBox);
+
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+
 		prog->unbind();
 
 
