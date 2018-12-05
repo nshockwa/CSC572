@@ -43,16 +43,19 @@ float noise(vec3 position, int octaves, float frequency, float persistence) {
 
 void main()
 {
+
 	vertex_normal = vec4(M * vec4(vertNor,0.0)).xyz;
-	vec4 tpos =  M * vec4(vertPos, 1.0);
-	tpos.z -=camoff.z;
-	tpos.x -=camoff.x;
-	float height = noise(tpos.xzy, 11, 0.03, 0.6);
+vec4 tpos =  M * vec4(vertPos, 1.0);
+tpos.z -=camoff.z;
+tpos.x -=camoff.x;
+//I.e. (vertex shader):
+float height = noise(tpos.xzy, 11, 0.03, 0.6);
 float baseheight = noise(tpos.xzy, 4, 0.004, 0.3);
 baseheight = pow(baseheight, 5)*3;
 height = baseheight*height;
 height*=60;
-tpos =  M * tpos;
+
+	tpos = tpos;
 
 
 	tpos.y += height;

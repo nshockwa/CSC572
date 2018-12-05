@@ -47,24 +47,21 @@ void main()
 	float t=1./100.;
 	texcoords -= vec2(camoff.x,camoff.z)*t;
 	//float height = texture(tex, texcoords).r;
-	vec4 tpos =  vec4(vertPos, 1.0);
-	tpos.z -=camoff.z;
-	tpos.x -=camoff.x;
-	//I.e. (vertex shader):
+vec4 tpos =  vec4(vertPos, 1.0);
+	tpos =  M * tpos;
+tpos.z -=camoff.z;
+tpos.x -=camoff.x;
+//I.e. (vertex shader):
 float height = noise(tpos.xzy, 11, 0.03, 0.6);
 float baseheight = noise(tpos.xzy, 4, 0.004, 0.3);
 baseheight = pow(baseheight, 5)*3;
 height = baseheight*height;
 height*=60;
-
 //height -=2;
-
-	tpos =  M * tpos;
 
 
 	tpos.y += height;
 	vertex_pos = tpos.xyz;
-
 	gl_Position = P * V * tpos;
 	vertex_tex = vertTex;
 }
