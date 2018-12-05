@@ -442,17 +442,18 @@ public:
 		{
 			grassPositions[idx++] = grassCalc[i].pos;
 			cout << "grassPositions[" << i << "] (" << grassPositions[i].x << ", " << grassPositions[i].y << ", " << grassPositions[i].z << ")" << endl;
+				
+				glEnableVertexAttribArray(3 +i);
+				glVertexAttribPointer(3+i, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+				glBindBuffer(GL_ARRAY_BUFFER, 0);
+				glVertexAttribDivisor(3+i, 1);
 		}
 
 
 		//instanceVBO
 
 
-		glEnableVertexAttribArray(3);
-		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glVertexAttribDivisor(3, 1);
+
 
 	}
 
@@ -569,8 +570,7 @@ public:
 
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glBindVertexArray(VertexArrayIDBox);
-
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, GRASS_ARR_SIZE);
 
 		prog->unbind();
 
