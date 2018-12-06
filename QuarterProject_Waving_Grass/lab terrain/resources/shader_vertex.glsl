@@ -2,7 +2,7 @@
 layout(location = 0) in vec3 vertPos;
 layout(location = 1) in vec3 vertNor;
 layout(location = 2) in vec2 vertTex;
-layout(location = 3) in vec3 offset;
+layout(location = 3) in vec3 instancePosOffset;
 
 uniform mat4 P;
 uniform mat4 V;
@@ -44,7 +44,7 @@ float noise(vec3 position, int octaves, float frequency, float persistence) {
 void main()
 {
 	vertex_normal = vec4(M * vec4(vertNor,0.0)).xyz;
-vec4 tpos =  M * vec4(vertPos + offset, 1.0);
+vec4 tpos =  M * vec4(vertPos + instancePosOffset, 1.0);
 tpos.z -=camoff.z;
 tpos.x -=camoff.x;
 //I.e. (vertex shader):

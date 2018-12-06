@@ -259,56 +259,7 @@ public:
 
 	void initGeom()
 	{
-		glGenVertexArrays(1, &VertexArrayIDBox);
-		glBindVertexArray(VertexArrayIDBox);
-
-		//generate vertex buffer to hand off to OGL
-		glGenBuffers(1, &VertexBufferIDBox);
-		//set the current state to focus on our vertex buffer
-		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferIDBox);
-
-		GLfloat *rectangle_vertices = new GLfloat[18];
-		// front
-		int verccount = 0;
-
-		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
-		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
-		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
-		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
-		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
-		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
-
-
-		//actually memcopy the data - only do this once
-		glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(float), rectangle_vertices, GL_STATIC_DRAW);
-		//we need to set up the vertex array
-		glEnableVertexAttribArray(0);
-		//key function to get up how many elements to pull out at a time (3)
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-
-		//generate vertex buffer to hand off to OGL
-		glGenBuffers(1, &VertexBufferTex);
-		//set the current state to focus on our vertex buffer
-		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferTex);
-
-		float t = 1. / 100.;
-		GLfloat *rectangle_texture_coords = new GLfloat[12];
-		int texccount = 0;
-		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 0;
-		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 0;
-		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 1;
-		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 0;
-		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 1;
-		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 1;
-
-		//actually memcopy the data - only do this once
-		glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), rectangle_texture_coords, GL_STATIC_DRAW);
-		//we need to set up the vertex array
-		glEnableVertexAttribArray(2);
-		//key function to get up how many elements to pull out at a time (3)
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
+		
 
 		//initialize the net mesh
 		init_mesh();
@@ -403,51 +354,108 @@ public:
 
 		/* GRASS POSITIONS*/
 
+		glGenVertexArrays(1, &VertexArrayIDBox);
+		glBindVertexArray(VertexArrayIDBox);
+
+		//generate vertex buffer to hand off to OGL
+		glGenBuffers(1, &VertexBufferIDBox);
+		//set the current state to focus on our vertex buffer
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferIDBox);
+
+		GLfloat *rectangle_vertices = new GLfloat[18];
+		// front
+		int verccount = 0;
+
+		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
+		rectangle_vertices[verccount++] = 0.0, rectangle_vertices[verccount++] = 1.0, rectangle_vertices[verccount++] = 0.0;
+
+
+		//actually memcopy the data - only do this once
+		glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(float), rectangle_vertices, GL_STATIC_DRAW);
+		//we need to set up the vertex array
+		glEnableVertexAttribArray(0);
+		//key function to get up how many elements to pull out at a time (3)
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+
+		//generate vertex buffer to hand off to OGL
+		glGenBuffers(1, &VertexBufferTex);
+		//set the current state to focus on our vertex buffer
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferTex);
+
+		float t = 1. / 100.;
+		GLfloat *rectangle_texture_coords = new GLfloat[12];
+		int texccount = 0;
+		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 0;
+		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 0;
+		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 1;
+		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 0;
+		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 1;
+		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 1;
+
+		//actually memcopy the data - only do this once
+		glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), rectangle_texture_coords, GL_STATIC_DRAW);
+		//we need to set up the vertex array
+		glEnableVertexAttribArray(2);
+		//key function to get up how many elements to pull out at a time (3)
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+
+
 		glGenBuffers(1, &instanceVBO);
 		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * GRASS_ARR_SIZE, &grassPositions[0], GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 
 		int idx = 0;
 		for (int x = -MESHSIZE / 2; x < MESHSIZE / 2; x++) {
 			for (int z = -MESHSIZE / 2; z < MESHSIZE / 2; z++) {
-				grassCalc[idx].pos = glm::vec3(x, mycam.pos.y, z);
+				grassCalc[idx].pos = glm::vec3(x, -3.0f, z);
 				grassCalc[idx].distance = distance(grassCalc[idx].pos, -mycam.pos);
 				idx++;
 			}
 		}
-		cout << "unSorted Array looks like this." << endl;
-		cout << "unSorted Array looks like this." << endl;
-		cout << "unSorted Array looks like this." << endl;
-		cout << "unSorted Array looks like this." << endl;
-		cout << "unSorted Array looks like this." << endl;
-
-		//std::vector<int> grassvector(begin(grassPositions), end(grassPositions));
-		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
-			cout << "grassCalc[" << i << "] (" << grassCalc[i].pos.x << ", " << grassCalc[i].pos.y << ", " << grassCalc[i].pos.z << ")" << endl;
-
 		sort(&grassCalc[0], &grassCalc[GRASS_ARR_SIZE], disComp);	//init rectangle mesh (2 triangles) for the post processing
-		//std::sort(grassvector.begin(), grassvector.end(), compareDistance);	//init rectangle mesh (2 triangles) for the post processing
-		cout << "Sorted Array looks like this." << endl;
-		cout << "Sorted Array looks like this." << endl;
-		cout << "Sorted Array looks like this." << endl;
-		cout << "Sorted Array looks like this." << endl;
-		cout << "Sorted Array looks like this." << endl;
-		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
-			cout << "grassCalc[" << i << "] (" << grassCalc[i].pos.x << ", " << grassCalc[i].pos.y << ", " << grassCalc[i].pos.z << ")" << endl;
-
 		idx = 0;
 		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
 		{
 			grassPositions[idx++] = grassCalc[i].pos;
-			cout << "grassPositions[" << i << "] (" << grassPositions[i].x << ", " << grassPositions[i].y << ", " << grassPositions[i].z << ")" << endl;
-				
-				glEnableVertexAttribArray(3 +i);
-				glVertexAttribPointer(3+i, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-				glBindBuffer(GL_ARRAY_BUFFER, 0);
-				glVertexAttribDivisor(3+i, 1);
 		}
+		glBufferData(GL_ARRAY_BUFFER, GRASS_ARR_SIZE * sizeof(glm::vec3), grassPositions, GL_STATIC_DRAW);
+		int position_loc = glGetAttribLocation(prog->pid, "instancePosOffset");
+		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
+		{
+			glEnableVertexAttribArray(position_loc + i);
+			glVertexAttribPointer(position_loc + i, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)(sizeof(vec3)*i));
+			glVertexAttribDivisor(position_loc + i, 1);
+		}
+
+		glBindVertexArray(0);
+		//cout << "unSorted Array looks like this." << endl;
+		//cout << "unSorted Array looks like this." << endl;
+		//cout << "unSorted Array looks like this." << endl;
+		//cout << "unSorted Array looks like this." << endl;
+		//cout << "unSorted Array looks like this." << endl;
+
+		////std::vector<int> grassvector(begin(grassPositions), end(grassPositions));
+		//for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
+		//	cout << "grassCalc[" << i << "] (" << grassCalc[i].pos.x << ", " << grassCalc[i].pos.y << ", " << grassCalc[i].pos.z << ")" << endl;
+
+		//std::sort(grassvector.begin(), grassvector.end(), compareDistance);	//init rectangle mesh (2 triangles) for the post processing
+		/*cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		cout << "Sorted Array looks like this." << endl;
+		for (size_t i = 0; i != GRASS_ARR_SIZE; ++i)
+			cout << "grassCalc[" << i << "] (" << grassCalc[i].pos.x << ", " << grassCalc[i].pos.y << ", " << grassCalc[i].pos.z << ")" << endl;
+*/
+		
+		/*cout << "grassPositions[" << i << "] (" << grassPositions[i].x << ", " << grassPositions[i].y << ", " << grassPositions[i].z << ")" << endl;*/
+				
 
 
 		//instanceVBO
@@ -568,6 +576,7 @@ public:
 		glUniform3fv(prog->getUniform("camoff"), 1, &offset2[0]);
 		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
 
+		glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -3.0f, -0.0f));
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glBindVertexArray(VertexArrayIDBox);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, GRASS_ARR_SIZE);
@@ -577,7 +586,7 @@ public:
 
 		heightshader->bind();
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, -3.0f, -50));
+	    TransY = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, -3.0f, -50));
 		M = TransY;
 		glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
