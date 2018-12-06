@@ -16,9 +16,13 @@ vec3 lp=vec3(10,-20,-100);
 vec3 ld = normalize(vertex_pos - lp);
 float diffuse = dot(n,ld);
 
+vec4 texColor = texture(tex, vertex_tex);
+//if (texColor.a > 0.1 );
+//{
+//	discard;
+//}
+color = texColor;
 
-color.rgb = texture(tex, vertex_tex).rgb;
-color.a=1;
 return;
 
 

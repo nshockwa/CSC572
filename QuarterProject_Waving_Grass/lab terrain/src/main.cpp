@@ -276,6 +276,10 @@ public:
 		int width, height, channels;
 		char filepath[1000];
 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
 		//texture 1
 		string str = resourceDirectory + "/grass.jpg";
 		strcpy(filepath, str.c_str());
@@ -316,20 +320,20 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
-
+		stbi_image_free(data);
 		//my grass tex
-		str = resourceDirectory + "/mygrass.jpg";
+		str = resourceDirectory + "/grass.png";
 		strcpy(filepath, str.c_str());
 		data = stbi_load(filepath, &width, &height, &channels, 4);
 		glGenTextures(1, &grassTex);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, grassTex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
 
 		//[TWOTEXTURES]
 		//set the 2 textures to the correct samplers in the fragment shader:
@@ -346,11 +350,6 @@ public:
 		glUseProgram(heightshader->pid);
 		glUniform1i(Tex1Location, 0);
 		glUniform1i(Tex2Location, 1);
-
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 
 		/* GRASS POSITIONS*/
 
@@ -390,12 +389,12 @@ public:
 		float t = 1. / 100.;
 		GLfloat *rectangle_texture_coords = new GLfloat[12];
 		int texccount = 0;
-		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 0;
-		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 0;
-		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 1;
-		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 0;
 		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 1;
 		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 1;
+		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 0;
+		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 1;
+		rectangle_texture_coords[texccount++] = 0, rectangle_texture_coords[texccount++] = 0;
+		rectangle_texture_coords[texccount++] = 1, rectangle_texture_coords[texccount++] = 0;
 
 		//actually memcopy the data - only do this once
 		glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), rectangle_texture_coords, GL_STATIC_DRAW);
@@ -521,6 +520,11 @@ public:
 	{
 		double frametime = get_last_elapsed_time();
 
+
+
+
+
+
 		// Get current frame buffer size.
 		int width, height;
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
@@ -577,6 +581,8 @@ public:
 		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
 
 		glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -3.0f, -0.0f));
+		//glm::mat4 Rot = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0, 1.0f));
+		//M = Rot;
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glBindVertexArray(VertexArrayIDBox);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, GRASS_ARR_SIZE);
