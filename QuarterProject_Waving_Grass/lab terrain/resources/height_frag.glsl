@@ -20,11 +20,11 @@ heightcolor.r = 0.1 + heightcolor.r*0.9;
 color.rgb = texture(tex2, texcoords*50).rgb * (clamp(heightcolor.r,0.2,1));
 color.a=1;
 
-float len = length(vertex_pos.xz+campos.xz);
-len-=41;
-len/=8.;
-len=clamp(len,0,1);
-color.a=1-len;
+//float len = length(vertex_pos.xz+campos.xz);
+//len-=41;
+//len/=20.;
+//len=clamp(len,0,1);
+//color.a=1-len;
 
 
 }

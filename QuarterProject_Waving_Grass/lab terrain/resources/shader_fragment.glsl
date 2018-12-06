@@ -38,4 +38,9 @@ color.rgb += vec3(1,1,1)*spec*3;
 color.a=1;
 
 
+//float len = length(vertex_pos.xz+campos.xz);
+//len-=41;
+//len/=8.;
+//len=clamp(len,0,1);
+//color.a=1-len;
 }

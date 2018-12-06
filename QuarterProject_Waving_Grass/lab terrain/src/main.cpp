@@ -101,9 +101,9 @@ public:
 		float going_forward = 0.0;
 		float going_side = 0.0;
 		if (w == 1)
-			going_forward += 0.1;
+			going_forward += 1.1;
 		if (s == 1)
-			going_forward -= 0.1;
+			going_forward -= 1.1;
 		if (a == 1)
 			going_side -= 0.1;
 		if (d == 1)
@@ -468,9 +468,9 @@ public:
 		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * GRASS_ARR_SIZE, &grassPositions[0], GL_STATIC_DRAW);
 
 		int idx = 0;
-		for (int x = -MESHSIZE / 2; x < MESHSIZE / 2; x++) {
-			for (int z = -MESHSIZE / 2; z < MESHSIZE / 2; z++) {
-				grassCalc[idx].pos = glm::vec3(x, -3.0f, z);
+		for (int x = -(sqrt(GRASS_ARR_SIZE)) / 2; x < (sqrt(GRASS_ARR_SIZE)) / 2; x++) {
+			for (int z = -(sqrt(GRASS_ARR_SIZE)) / 2; z < (sqrt(GRASS_ARR_SIZE)) / 2; z++) {
+				grassCalc[idx].pos = glm::vec3(x *0.5, 0.0f, z *0.5);
 				grassCalc[idx].distance = distance(grassCalc[idx].pos, -mycam.pos);
 				idx++;
 			}
@@ -609,18 +609,48 @@ public:
 			P = glm::ortho(-1.0f, 1.0f, -1.0f / aspect,  1.0f / aspect, -2.0f, 100.0f);
 			}
 		// ...but we overwrite it (optional) with a perspective projection.
-		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width/ (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
+		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width/ (float)height), 0.1f, 100.0f); //so much type casting... GLM metods are quite funny ones
 
 		//animation with the model matrix:
 		static float w = 0.0;
 		w += 1.0 * frametime;//rotation angle
 		float trans = 0;// sin(t) * 2;
 
+		V = mycam.get_viewmatrix();
+		mouse.process(windowManager->getHandle(), &mycam.rot);
+
+		heightshader->bind();
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, -3.0f, -50));
+		M = TransY;
+		glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+		glUniformMatrix4fv(heightshader->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+
+
+		vec3 offset = mycam.pos;
+		offset.y = 0;
+		offset.x = (int)offset.x;
+		offset.z = (int)offset.z;
+		cout << offset.x << endl;
+		glUniform3fv(heightshader->getUniform("camoff"), 1, &offset[0]);
+		glUniform3fv(heightshader->getUniform("campos"), 1, &mycam.pos[0]);
+		glBindVertexArray(VertexArrayID);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferIDBox);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, HeightTex);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, Texture);
+		glDrawElements(GL_TRIANGLES, MESHSIZE*MESHSIZE * 6, GL_UNSIGNED_SHORT, (void*)0);
+
+		heightshader->unbind();
+
+
+
 		// Draw the box using GLSL.
 		prog->bind();
 		
-		V = mycam.get_viewmatrix();
-		mouse.process(windowManager->getHandle(), &mycam.rot);
+		
 
 		//send the matrices to the shaders
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
@@ -649,9 +679,9 @@ public:
 
 
 
-		glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -3.0f, -0.0f));
+		TransY = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -3.0f, -0.0f));
 		//glm::mat4 Rot = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0, 1.0f));
-		//M = Rot;
+		M = TransY;
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glBindVertexArray(VertexArrayIDBox);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, GRASS_ARR_SIZE);
@@ -659,31 +689,7 @@ public:
 		prog->unbind();
 
 
-		heightshader->bind();
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	    TransY = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, -3.0f, -50));
-		M = TransY;
-		glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		glUniformMatrix4fv(heightshader->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		
-		
-		vec3 offset = mycam.pos;
-		offset.y = 0;
-		offset.x = (int)offset.x;
-		offset.z = (int)offset.z;
-		cout << offset.x << endl;
-		glUniform3fv(heightshader->getUniform("camoff"), 1, &offset[0]);
-		glUniform3fv(heightshader->getUniform("campos"), 1, &mycam.pos[0]);
-		glBindVertexArray(VertexArrayID);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferIDBox);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, HeightTex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, Texture);
-		glDrawElements(GL_TRIANGLES, MESHSIZE*MESHSIZE*6, GL_UNSIGNED_SHORT, (void*)0);
 
-		heightshader->unbind();
 
 	}
 
