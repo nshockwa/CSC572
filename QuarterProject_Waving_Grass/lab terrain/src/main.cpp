@@ -9,6 +9,7 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 #include "GLSL.h"
 #include "Program.h"
 #include "MatrixStack.h"
+#define PIH 3.1415926/2.
 
 #include "WindowManager.h"
 #include "Shape.h"
@@ -38,40 +39,94 @@ double get_last_elapsed_time()
 	lasttime = actualtime;
 	return difference;
 }
+
+class Mouse
+{
+private:
+	bool mousemove = false;
+public:
+	bool is_mousemove() { return mousemove; }
+	void swap_mousemove(GLFWwindow *window)
+	{
+		if (!mousemove)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+			double dcurrentx, dcurrenty;
+			glfwGetCursorPos(window, &dcurrentx, &dcurrenty);
+			holdx = dcurrentx;
+			holdy = dcurrenty;
+		}
+		else
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		mousemove = !mousemove;
+	}
+
+	int holdx, holdy;
+	int currentx, currenty;
+	//void set_current(bool )
+	Mouse() {}
+	void process(GLFWwindow *window, vec3 *camerarotation)
+	{
+		if (!mousemove) return;
+		double dcurrentx, dcurrenty;
+		glfwGetCursorPos(window, &dcurrentx, &dcurrenty);
+		currentx = dcurrentx;
+		currenty = dcurrenty;
+		vec2 diff = vec2(holdx - currentx, holdy - currenty);
+		glfwSetCursorPos(window, (double)holdx, (double)holdy);
+		*camerarotation -= (float)0.005*vec3(diff.y, diff.x, 0);
+
+	}
+};
+
 class camera
 {
+private:
+	glm::mat4 View;
 public:
-	glm::vec3 pos, rot;
+	glm::vec3 pos;
+	glm::vec3 rot;
 	int w, a, s, d;
+
+	glm::mat4 get_viewmatrix() { return View; }
 	camera()
 	{
 		w = a = s = d = 0;
 		pos = rot = glm::vec3(0, 0, 0);
+		pos = glm::vec3(0, 0, 0);
+		rot = glm::vec3(0, 0, 0);
 	}
-	glm::mat4 process(double ftime)
+	void process()
 	{
-		float speed = 0;
+		float going_forward = 0.0;
+		float going_side = 0.0;
 		if (w == 1)
-		{
-			speed = 10*ftime;
-		}
-		else if (s == 1)
-		{
-			speed = -10*ftime;
-		}
-		float yangle=0;
+			going_forward += 0.1;
+		if (s == 1)
+			going_forward -= 0.1;
 		if (a == 1)
-			yangle = -3*ftime;
-		else if(d==1)
-			yangle = 3*ftime;
-		rot.y += yangle;
-		glm::mat4 R = glm::rotate(glm::mat4(1), rot.y, glm::vec3(0, 1, 0));
-		glm::vec4 dir = glm::vec4(0, 0, speed,1);
-		dir = dir*R;
-		pos += glm::vec3(dir.x, dir.y, dir.z);
-		glm::mat4 T = glm::translate(glm::mat4(1), pos);
-		return R*T;
+			going_side -= 0.1;
+		if (d == 1)
+			going_side += 0.1;
+
+		if (rot.x > PIH) rot.x = PIH;
+		if (rot.x < -PIH) rot.x = -PIH;
+		glm::mat4 Ry = glm::rotate(glm::mat4(1), rot.y, glm::vec3(0, 1, 0));
+		glm::mat4 Rx = glm::rotate(glm::mat4(1), rot.x, glm::vec3(1, 0, 0));
+
+		glm::mat4 R = Rx * Ry;
+
+		glm::vec4 rpos = glm::vec4(going_side, 0, -going_forward, 1);
+
+		rpos = rpos * R;
+		pos.x -= rpos.x;
+		pos.y -= rpos.y;
+		pos.z -= rpos.z;
+
+		glm::mat4 T = glm::translate(glm::mat4(1), glm::vec3(pos.x, pos.y, pos.z));
+		View = R * T;
 	}
+
 };
 
 camera mycam;
@@ -82,6 +137,7 @@ class Application : public EventCallbacks
 public:
 
 	WindowManager * windowManager = nullptr;
+	Mouse mouse;
 
 	//billboard ish
 		#define PI 3.14159265358979324
@@ -173,6 +229,8 @@ public:
 			//update the vertex array with the updated points
 			glBufferSubData(GL_ARRAY_BUFFER, sizeof(float)*6, sizeof(float)*2, newPt);
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			mouse.swap_mousemove(windowManager->getHandle());
+
 		}
 	}
 
@@ -488,9 +546,13 @@ public:
 		prog->addUniform("M");
 		prog->addUniform("campos");
 		prog->addUniform("camoff");
+		prog->addUniform("timeStamp");
+		prog->addUniform("wind");
+
 		prog->addAttribute("vertPos");
 		prog->addAttribute("vertNor");
 		prog->addAttribute("vertTex");
+
 
 		// Initialize the GLSL program.
 		heightshader = std::make_shared<Program>();
@@ -521,7 +583,7 @@ public:
 		double frametime = get_last_elapsed_time();
 
 
-
+		mycam.process();
 
 
 
@@ -556,18 +618,18 @@ public:
 
 		// Draw the box using GLSL.
 		prog->bind();
+		
+		V = mycam.get_viewmatrix();
+		mouse.process(windowManager->getHandle(), &mycam.rot);
 
-		V = mycam.process(frametime);
 		//send the matrices to the shaders
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
 		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 
 		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
 		
-		mat4 Vi = glm::transpose(V);
-		Vi[0][3] = 0;
-		Vi[1][3] = 0;
-		Vi[2][3] = 0;
+		
+
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, grassTex);
@@ -577,8 +639,15 @@ public:
 		offset2.y = 0;
 		offset2.x = (int)offset2.x;
 		offset2.z = (int)offset2.z;
+		float time = glfwGetTime();
+		vec3 wind = vec3(0.0, 1.0, 10.0);
 		glUniform3fv(prog->getUniform("camoff"), 1, &offset2[0]);
 		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
+		glUniform1fv(prog->getUniform("timeStamp"), 1, &time);
+		glUniform3fv(prog->getUniform("wind"), 1, &wind[0]);
+
+
+
 
 		glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -3.0f, -0.0f));
 		//glm::mat4 Rot = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0, 1.0f));

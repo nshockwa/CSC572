@@ -8,6 +8,9 @@ uniform mat4 P;
 uniform mat4 V;
 uniform mat4 M;
 uniform vec3 camoff;
+uniform float timeStamp;
+uniform vec3 wind;
+
 out vec3 vertex_pos;
 out vec3 vertex_normal;
 out vec2 vertex_tex;
@@ -39,7 +42,9 @@ float noise(vec3 position, int octaves, float frequency, float persistence) {
 	return total / maxAmplitude;
 	}
 
-
+vec3 calcTranslation(float t, vec3 wind_scale) {
+	return wind_scale * (sin(t) + 0.5);
+}
 
 void main()
 {
@@ -59,7 +64,15 @@ height*=60;
 
 	tpos.y += height;
 	vertex_pos = tpos.xyz;
-	gl_Position = P * V * tpos;
+
+
+	if (vertTex.y < 0.1) {
+
+		//vec3 vVertexTranslation = calcTranslation(timeStamp, wind);
+		vec3 tpos2 = vertex_pos + vec3(1.0, 0.0, 1.0) * (sin(timeStamp *2) + 0.5);
+		vertex_pos = tpos2;
+	}
 	vertex_tex = vertTex;
-	
+	gl_Position = P * V * vec4(vertex_pos,1.0);
+
 }

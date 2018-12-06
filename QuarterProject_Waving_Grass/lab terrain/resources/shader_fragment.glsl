@@ -17,10 +17,10 @@ vec3 ld = normalize(vertex_pos - lp);
 float diffuse = dot(n,ld);
 
 vec4 texColor = texture(tex, vertex_tex);
-//if (texColor.a > 0.1 );
-//{
-//	discard;
-//}
+if (texColor.a < 0.1);
+{
+	//discard;
+}
 color = texColor;
 
 return;
