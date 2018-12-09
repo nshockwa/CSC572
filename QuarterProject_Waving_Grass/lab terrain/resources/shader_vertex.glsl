@@ -14,6 +14,7 @@ uniform vec3 wind;
 out vec3 vertex_pos;
 out vec3 vertex_normal;
 out vec2 vertex_tex;
+out int instanceId;
 
 float hash(float n) { return fract(sin(n) * 753.5453123); }
 float snoise(vec3 x)
@@ -99,10 +100,10 @@ height*=60;
 	if (vertTex.y < 0.1) {
 
 		vec3 vVertexTranslation = calcTranslation(timeStamp, wind);
-		vec3 tpos2 = vertex_pos + vec3(1.0, 0.0, 1.0) * (sin(timeStamp *2) + 0.5);
+		vec3 tpos2 = vertex_pos *scale + vec3(1.0, 0.0, 1.0) * (sin(timeStamp *2) + 0.5);
 		vertex_pos = tpos2;
 	}
 	vertex_tex = vertTex;
 	gl_Position = P * V * vec4(vertex_pos,1.0);
-
+	instanceId = gl_InstanceID;
 }
