@@ -43,9 +43,9 @@ float noise(vec3 position, int octaves, float frequency, float persistence) {
 	return total / maxAmplitude;
 	}
 
-vec3 calcTranslation(float t, vec3 wind_scale) {
-	return wind_scale * (sin(t) + 0.5);
-}
+//vec3 calcTranslation(vec3 wind_dir, vec3 wind_scale, float t) {
+//	return wind_dir * wind_scale * (sin(t) + 0.5);
+//}
 mat4 rotationMatrix(vec3 axis, float angle)
 {
     axis = normalize(axis);
@@ -99,8 +99,9 @@ height*=60;
 	vertex_pos = tpos.xyz;
 	if (vertTex.y < 0.1) {
 
-		vec3 vVertexTranslation = calcTranslation(timeStamp, wind);
-		vec3 tpos2 = vertex_pos *scale + vec3(1.0, 0.0, 1.0) * (sin(timeStamp *2) + 0.5);
+		//vec3 vVertexTranslation = calcTranslation(wind, wind, time);
+		//vec3 tpos2 = vertex_pos + vVertexTranslation;
+		vec3 tpos2 = vertex_pos + vec3(1.0, 0.0, 1.0) * (sin(timeStamp *2) + 0.5);
 		vertex_pos = tpos2;
 	}
 	vertex_tex = vertTex;
