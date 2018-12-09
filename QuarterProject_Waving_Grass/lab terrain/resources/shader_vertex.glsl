@@ -101,7 +101,7 @@ height*=60;
 
 		//vec3 vVertexTranslation = calcTranslation(wind, wind, time);
 		//vec3 tpos2 = vertex_pos + vVertexTranslation;
-		vec3 tpos2 = vertex_pos + vec3(1.0, 0.0, 1.0) * (sin(timeStamp *2) + 0.5);
+		vec3 tpos2 = vertex_pos + vec3(noise(tpos.xzy, 3, 0.024, 0.5), noise(tpos.xzy, 7, 0.006, 0.1), noise(tpos.xzy, 2, 0.104, 0.5)) * (sin(timeStamp *2) + scale/60);
 		vertex_pos = tpos2;
 	}
 	vertex_tex = vertTex;
